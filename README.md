@@ -41,7 +41,7 @@ workspace scope is the shared git toplevel.
 | `missing_context` | Bare `?` without context, including inline anyhow! errors; use `.context()` or `.with_context()`. |
 | `missing_fn_docs` | Functions without attached docs; every fn outside test code needs `///`, std methods exempt. Complements `clippy::missing_docs_in_private_items`. |
 | `missing_mod_docs` | Files without leading module docs; every file needs a `//!` line on line 1. Complements `rustc::missing_docs` / `clippy::missing_docs_in_private_items`. |
-| `mixed_import_groups` | Mixed import groups; separate `std`, external, self-package, and `crate` blocks with blank lines. Complements `group_imports = "StdExternalCrate"` in `rustfmt.toml`. |
+| `mixed_import_groups` | Mixed import groups; separate `std`, external, self-package, and `crate` blocks with blank lines, unconditional then `cfg` sub-blocks inside one block. Complements `group_imports = "StdExternalCrate"` in `rustfmt.toml`. |
 | `mixed_mod_groups` | Mixed mod groups; separate `macro_use`, ordinary, and `cfg(test)` blocks with blank lines. |
 | `module_order` | Module order with tests at bottom; keep declarations at top with actual tests. |
 | `multi_cfg_files` | Files with more than one inline cfg-test module; one `mod tests` per file. |

@@ -10,8 +10,8 @@ use crate::{
         mod_groups::{
             CFG_TEST_GROUP, MACRO_USE_GROUP, ORDINARY_GROUP,
             attr::{
-                attr_block_start_ending_at, block_has_cfg_test, is_pure_attr_text, is_pure_block,
-                resolve_trailing_attr_start, trailing_attr_mod_pos,
+                attached_from, block_has_cfg_test, is_pure_attr_text, resolve_trailing_attr_start,
+                trailing_attr_mod_pos,
             },
         },
         order::{is_inline_mod, match_mod_head, skip_inline, strip_attrs},
@@ -144,26 +144,6 @@ fn trailing_block_start(file: &SourceFile, mod_idx: usize) -> Option<usize> {
 /// walk before lines above are considered.
 fn attached_start(file: &SourceFile, mod_idx: usize) -> usize {
     attached_from(file, trailing_block_start(file, mod_idx).unwrap_or(mod_idx))
-}
-
-/// Walk contiguous pure attribute blocks above `start`.
-fn attached_from(file: &SourceFile, mut start: usize) -> usize {
-    while let Some(prev) = start.checked_sub(1) {
-        let Some(line) = file.stripped.get(prev) else {
-            break;
-        };
-        if code_of(line).trim().is_empty() {
-            break;
-        }
-        let Some(block_start) = attr_block_start_ending_at(file, prev) else {
-            break;
-        };
-        if !is_pure_block(file, block_start, prev) {
-            break;
-        }
-        start = block_start;
-    }
-    start
 }
 
 /// True if attribute `code` mentions `macro_use`.

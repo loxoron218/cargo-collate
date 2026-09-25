@@ -240,7 +240,7 @@ fn check_path_rules(output: &mut String, files: &[SourceFile]) -> bool {
     fail |= show(
         output,
         "Mixed import groups; separate std, external, self-package, and crate blocks with blank \
-         lines.",
+         lines, unconditional then cfg sub-blocks inside one block.",
         &mixed_import_groups(files),
     );
     fail |= show(

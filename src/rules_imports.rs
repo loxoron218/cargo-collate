@@ -1,18 +1,25 @@
 //! Import-group separation for `use` blocks.
 //!
 //! Parent index for the capability. The `origin` submodule resolves package
-//! names and local modules while `rank` classifies single imports; this file
-//! keeps the driver plus the statement scan.
+//! names and local modules while `rank` classifies single imports; `attr`
+//! attaches leading attributes and detects `cfg` sub-blocks staying inside
+//! their `std`/external/`crate` group like `mixed_mod_groups` attaches `mod`
+//! attributes.
 
+pub mod import_attr;
 pub mod origin;
 pub mod rank;
 pub mod stray;
+
+#[cfg(test)]
+mod import_cases;
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
     lexer::{literal::strip_strings, marker::cut_line_comment},
     rules_imports::{
+        import_attr::{attached_start, has_detached_attr_gap, is_cfg_gated},
         origin::{locals_for, package_names, top_modules_by_package},
         rank::{classify, is_use_start},
     },
@@ -22,20 +29,26 @@ use crate::{
 
 /// One joined `use` statement with its group rank.
 struct UseStmt {
-    /// Zero-based line where the statement starts.
+    /// Zero-based line of the first attached attribute or the `use` itself.
+    attr_start: usize,
+    /// Zero-based line where the `use` keyword sits.
     start: usize,
     /// Zero-based line where the statement ends.
     end: usize,
     /// Group rank from `std` to `crate`.
     group: u8,
+    /// True when gated by `#[cfg(...)]`; sorts after plain in one group.
+    cfg_gated: bool,
     /// True when one consolidated block mixes several groups.
     mixed: bool,
 }
 
 /// Mixed import groups across every `use` block in all files.
 ///
-/// Groups stay ordered `std`, external, self-package, `crate`, separated by
-/// blank lines with no blanks inside a group.
+/// Groups stay ordered `std`, external, self-package, `crate`; inside one
+/// group unconditional imports come first, then `#[cfg(...)]`-gated imports
+/// (all predicates lumped). Sub-blocks stay separated by blank lines with no
+/// blanks inside one `(group, cfg)` sub-block.
 #[must_use]
 pub fn mixed_import_groups(files: &[SourceFile]) -> Vec<String> {
     let modules = top_modules_by_package(files);
@@ -56,50 +69,56 @@ fn check_file(
     let pkg_name = names.get(&pkg).cloned().flatten();
     let fallback = BTreeSet::new();
     let locals = locals_for(modules, &pkg, &file.path, &fallback);
-    group_findings(&file.path, &file.lines, pkg_name.as_deref(), locals)
+    group_findings(file, pkg_name.as_deref(), locals)
 }
 
-/// Findings for file lines with a resolved package name and locals.
+/// Findings for one file with a resolved package name and locals.
 fn group_findings(
-    path: &str,
-    lines: &[String],
+    file: &SourceFile,
     pkg_name: Option<&str>,
     locals: &BTreeSet<String>,
 ) -> Vec<String> {
-    let stmts = collect_uses(lines, pkg_name, locals);
+    let stmts = collect_uses(file, pkg_name, locals);
     let mut out = Vec::new();
     for stmt in &stmts {
         if stmt.mixed {
-            push_hit(&mut out, path, lines, stmt.start);
+            push_hit(&mut out, &file.path, &file.lines, stmt.start);
+        }
+        if has_detached_attr_gap(file, stmt.attr_start)
+            && !out.iter().any(|hit| {
+                hit.starts_with(&format!("{}:{}:", file.path, stmt.start.saturating_add(1)))
+            })
+        {
+            push_hit(&mut out, &file.path, &file.lines, stmt.start);
         }
     }
     let mut prev: Option<&UseStmt> = None;
-    let mut peak = 0;
+    let mut peak: (u8, bool) = (0, false);
     for stmt in &stmts {
         let Some(before) = prev else {
-            peak = stmt.group;
+            peak = (stmt.group, stmt.cfg_gated);
             prev = Some(stmt);
             continue;
         };
-        if !same_run(lines, before.end.saturating_add(1), stmt.start) {
-            peak = stmt.group;
+        if !same_run(&file.lines, before.end.saturating_add(1), stmt.attr_start) {
+            peak = (stmt.group, stmt.cfg_gated);
             prev = Some(stmt);
             continue;
         }
-        if pair_hit(lines, before, stmt, peak) {
-            push_hit(&mut out, path, lines, stmt.start);
+        if pair_hit(&file.lines, before, stmt, peak) {
+            push_hit(&mut out, &file.path, &file.lines, stmt.start);
         }
-        peak = peak.max(stmt.group);
+        peak = peak.max((stmt.group, stmt.cfg_gated));
         prev = Some(stmt);
     }
     out
 }
 
 /// True when an adjacent pair in one run needs a finding.
-fn pair_hit(lines: &[String], before: &UseStmt, stmt: &UseStmt, peak: u8) -> bool {
-    let blank = gap_has_blank(lines, before.end.saturating_add(1), stmt.start);
-    let ordered = stmt.group >= peak;
-    let separated = (stmt.group == before.group) != blank;
+fn pair_hit(lines: &[String], before: &UseStmt, stmt: &UseStmt, peak: (u8, bool)) -> bool {
+    let blank = gap_has_blank(lines, before.end.saturating_add(1), stmt.attr_start);
+    let ordered = (stmt.group, stmt.cfg_gated) >= peak;
+    let separated = ((stmt.group, stmt.cfg_gated) == (before.group, before.cfg_gated)) != blank;
     !ordered || !separated
 }
 
@@ -112,10 +131,11 @@ pub fn push_hit(out: &mut Vec<String>, path: &str, lines: &[String], start: usiz
 
 /// Joined `use` statements of one file with group ranks.
 fn collect_uses(
-    lines: &[String],
+    file: &SourceFile,
     pkg_name: Option<&str>,
     locals: &BTreeSet<String>,
 ) -> Vec<UseStmt> {
+    let lines = &file.lines;
     let mut out = Vec::new();
     let mut idx = 0;
     while idx < lines.len() {
@@ -133,10 +153,14 @@ fn collect_uses(
             break;
         }
         let (group, mixed) = classify(&joined, pkg_name, locals);
+        let attr_start = attached_start(file, start);
+        let cfg_gated = is_cfg_gated(file, attr_start, start);
         out.push(UseStmt {
+            attr_start,
             start,
             end,
             group,
+            cfg_gated,
             mixed,
         });
         idx = end.saturating_add(1);
@@ -178,220 +202,4 @@ fn same_run(lines: &[String], from: usize, to: usize) -> bool {
             is_gap_filler(code)
         })
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use std::collections::BTreeSet;
-
-    use crate::{
-        rules_imports::{group_findings, mixed_import_groups},
-        scan::support::test_file,
-    };
-
-    #[test]
-    fn clean_groups_silent() {
-        let files = vec![test_file(
-            "src/a.rs",
-            &[
-                "use std::fs::File;",
-                "",
-                "use anyhow::Context;",
-                "",
-                "use crate::other::Thing;",
-            ],
-        )];
-        assert!(
-            mixed_import_groups(&files).is_empty(),
-            "separated groups stay silent"
-        );
-    }
-
-    #[test]
-    fn missing_blank_flagged() {
-        let files = vec![test_file("src/a.rs", &["use std::a;", "use anyhow::b;"])];
-        let hits = mixed_import_groups(&files);
-        assert_eq!(hits.len(), 1, "missing blank flags");
-        assert!(
-            hits.first().is_some_and(|hit| hit.contains(":2:")),
-            "second line flagged"
-        );
-    }
-
-    #[test]
-    fn wrong_order_flagged() {
-        let files = vec![test_file("src/a.rs", &["use crate::o;", "", "use std::a;"])];
-        assert_eq!(mixed_import_groups(&files).len(), 1, "reversed order flags");
-    }
-
-    #[test]
-    fn repeated_split_flagged() {
-        let files = vec![
-            test_file(
-                "src/a.rs",
-                &[
-                    "use std::fs::File;",
-                    "",
-                    "use anyhow::Context;",
-                    "",
-                    "use std::path::Path;",
-                ],
-            ),
-            test_file("src/b.rs", &["use std::c;", "", "use std::d;"]),
-        ];
-        assert_eq!(
-            mixed_import_groups(&files).len(),
-            2,
-            "repeats and splits flag"
-        );
-    }
-
-    #[test]
-    fn self_package_benches() {
-        let good = test_file(
-            "benches/speed.rs",
-            &[
-                "use criterion::{Criterion, criterion_group, criterion_main};",
-                "",
-                "use oxhidifi::playback::Converter;",
-            ],
-        );
-        assert!(
-            group_findings(&good.path, &good.lines, Some("oxhidifi"), &BTreeSet::new()).is_empty(),
-            "separated self package stays silent"
-        );
-        let bad = test_file(
-            "benches/speed.rs",
-            &[
-                "use criterion::{Criterion, criterion_group, criterion_main};",
-                "use oxhidifi::playback::Converter;",
-            ],
-        );
-        assert_eq!(
-            group_findings(&bad.path, &bad.lines, Some("oxhidifi"), &BTreeSet::new()).len(),
-            1,
-            "joined self package flags"
-        );
-    }
-
-    #[test]
-    fn prompt_shape_silent() {
-        let file = test_file(
-            "tests/api.rs",
-            &[
-                "use std::sync::OnceLock;",
-                "",
-                "use qobuz_api::api::quality::MP3_320;",
-                "",
-                "use crate::{env_var_or, load_env_file};",
-            ],
-        );
-        assert!(
-            group_findings(&file.path, &file.lines, Some("qobuz_api"), &BTreeSet::new()).is_empty(),
-            "prompt shape stays silent"
-        );
-    }
-
-    #[test]
-    fn core_alloc_join_std() {
-        let files = vec![test_file(
-            "src/a.rs",
-            &[
-                "use std::fs::File;",
-                "use core::marker::Sized;",
-                "use alloc::vec::Vec;",
-            ],
-        )];
-        assert!(
-            mixed_import_groups(&files).is_empty(),
-            "core and alloc join std"
-        );
-    }
-
-    #[test]
-    fn consolidated_external_silent() {
-        let files = vec![test_file(
-            "src/a.rs",
-            &[
-                "use {",
-                "    anyhow::Context,",
-                "    serde::de,",
-                "};",
-                "",
-                "use crate::other;",
-            ],
-        )];
-        assert!(
-            mixed_import_groups(&files).is_empty(),
-            "consolidated externals stay silent"
-        );
-    }
-
-    #[test]
-    fn mixed_consolidated_flagged() {
-        let files = vec![test_file(
-            "src/a.rs",
-            &["use {", "    anyhow::Context,", "    crate::other,", "};"],
-        )];
-        assert_eq!(
-            mixed_import_groups(&files).len(),
-            1,
-            "mixed consolidated block flags"
-        );
-    }
-
-    #[test]
-    fn cfg_attr_gap_silent() {
-        let files = vec![test_file(
-            "src/a.rs",
-            &[
-                "use std::fs::File;",
-                "",
-                "#[cfg(feature = \"gated\")]",
-                "use anyhow::Context;",
-            ],
-        )];
-        assert!(
-            mixed_import_groups(&files).is_empty(),
-            "attributed imports stay silent"
-        );
-    }
-
-    #[test]
-    fn inner_runs_checked() {
-        let files = vec![test_file(
-            "src/a.rs",
-            &[
-                "use std::fs::File;",
-                "",
-                "use anyhow::Context;",
-                "",
-                "#[cfg(test)]",
-                "mod tests {",
-                "    use std::path::Path;",
-                "    use crate::other;",
-                "}",
-            ],
-        )];
-        let hits = mixed_import_groups(&files);
-        assert_eq!(hits.len(), 1, "inner missing blank flags");
-        assert!(
-            hits.first().is_some_and(|hit| hit.contains(":8:")),
-            "inner line flagged"
-        );
-    }
-
-    #[test]
-    fn sibling_modules_join_crate() {
-        let files = vec![
-            test_file("src/main.rs", &["use gating::thing;", "use crate::other;"]),
-            test_file("src/gating.rs", &["pub fn thing() {}"]),
-            test_file("tests/a.rs", &["use anyhow::b;", "", "use helper::c;"]),
-            test_file("tests/helper.rs", &["pub fn c() {}"]),
-        ];
-        assert!(
-            mixed_import_groups(&files).is_empty(),
-            "siblings join crate group"
-        );
-    }
 }

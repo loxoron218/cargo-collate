@@ -6,18 +6,13 @@
 use crate::{
     rules_tests::{
         mod_groups::{
-            attr::{
-                attr_block_start_ending_at, block_has_cfg_test, block_has_macro_use, is_pure_block,
-            },
+            attr::{block_has_cfg_test, block_has_macro_use, has_detached_block},
             mod_collect::{ModStmt, collect_file_mods},
         },
         range::code_of,
     },
     scan::SourceFile,
 };
-
-/// Maximum lines scanned backwards for detached attributes.
-const MAX_DETACHED_SCAN_LINES: usize = 24;
 
 /// Module-group findings for one file.
 #[must_use]
@@ -120,43 +115,7 @@ fn pair_mod_hit(file: &SourceFile, before: &ModStmt, stmt: &ModStmt, peak: u8) -
 /// Walks whole attribute blocks so multi-line detached attributes count like
 /// single-line ones.
 fn has_detached_attr_gap(file: &SourceFile, stmt: &ModStmt) -> bool {
-    let mut blank_found = false;
-    let mut scanned: usize = 0;
-    let mut current = stmt.attr_start.checked_sub(1);
-    while let Some(cur) = current {
-        if scanned >= MAX_DETACHED_SCAN_LINES {
-            break;
-        }
-        scanned = scanned.saturating_add(1);
-        let Some(stripped_line) = file.stripped.get(cur) else {
-            break;
-        };
-        if code_of(stripped_line).trim().is_empty() {
-            blank_found |= is_true_blank(file, cur);
-            current = cur.checked_sub(1);
-            continue;
-        }
-        let Some(block_start) = attr_block_start_ending_at(file, cur) else {
-            break;
-        };
-        scanned = scanned.saturating_add(cur.saturating_sub(block_start));
-        if !is_pure_block(file, block_start, cur) {
-            break;
-        }
-        if blank_found
-            && (block_has_cfg_test(file, block_start, cur)
-                || block_has_macro_use(file, block_start, cur))
-        {
-            return true;
-        }
-        current = block_start.checked_sub(1);
-    }
-    false
-}
-
-/// True if the original line at `idx` is blank.
-fn is_true_blank(file: &SourceFile, idx: usize) -> bool {
-    file.lines
-        .get(idx)
-        .is_some_and(|line| line.trim().is_empty())
+    has_detached_block(file, stmt.attr_start, |file, start, end| {
+        block_has_cfg_test(file, start, end) || block_has_macro_use(file, start, end)
+    })
 }

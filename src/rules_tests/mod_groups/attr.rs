@@ -16,6 +16,9 @@ use crate::{
 /// Maximum lines scanned backwards for one attribute block.
 const MAX_ATTR_BLOCK_LINES: usize = 16;
 
+/// Maximum lines scanned backwards for detached attributes.
+const MAX_DETACHED_SCAN_LINES: usize = 24;
+
 /// Start line of the attribute block ending at `end`, if any.
 #[must_use]
 pub fn attr_block_start_ending_at(file: &SourceFile, end: usize) -> Option<usize> {
@@ -148,4 +151,73 @@ pub fn block_has_cfg_test(file: &SourceFile, start: usize, end: usize) -> bool {
 pub fn block_has_macro_use(file: &SourceFile, start: usize, end: usize) -> bool {
     join_block_lines(file, start, end, true)
         .is_some_and(|joined| joined.contains("#[") && has_word(&joined, "macro_use"))
+}
+
+/// First line of the contiguous pure attribute blocks above `start`.
+///
+/// Shared by file-module and import collection so attribute attachment never
+/// clones across capabilities.
+#[must_use]
+pub fn attached_from(file: &SourceFile, mut start: usize) -> usize {
+    while let Some(prev) = start.checked_sub(1) {
+        let Some(line) = file.stripped.get(prev) else {
+            break;
+        };
+        if code_of(line).trim().is_empty() {
+            break;
+        }
+        let Some(block_start) = attr_block_start_ending_at(file, prev) else {
+            break;
+        };
+        if !is_pure_block(file, block_start, prev) {
+            break;
+        }
+        start = block_start;
+    }
+    start
+}
+
+/// True when a significant pure attribute block sits above `attr_start`
+/// across a blank.
+///
+/// The walk is shared; callers decide significance (any block for imports,
+/// `cfg(test)`/`macro_use` for file modules).
+#[must_use]
+pub fn has_detached_block(
+    file: &SourceFile,
+    attr_start: usize,
+    significant: impl Fn(&SourceFile, usize, usize) -> bool,
+) -> bool {
+    let mut blank_found = false;
+    let mut scanned: usize = 0;
+    let mut current = attr_start.checked_sub(1);
+    while let Some(cur) = current {
+        if scanned >= MAX_DETACHED_SCAN_LINES {
+            break;
+        }
+        scanned = scanned.saturating_add(1);
+        let Some(stripped_line) = file.stripped.get(cur) else {
+            break;
+        };
+        if code_of(stripped_line).trim().is_empty() {
+            blank_found |= file
+                .lines
+                .get(cur)
+                .is_some_and(|line| line.trim().is_empty());
+            current = cur.checked_sub(1);
+            continue;
+        }
+        let Some(block_start) = attr_block_start_ending_at(file, cur) else {
+            break;
+        };
+        scanned = scanned.saturating_add(cur.saturating_sub(block_start));
+        if !is_pure_block(file, block_start, cur) {
+            break;
+        }
+        if blank_found && significant(file, block_start, cur) {
+            return true;
+        }
+        current = block_start.checked_sub(1);
+    }
+    false
 }
