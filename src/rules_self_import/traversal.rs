@@ -4,7 +4,7 @@ use crate::{
     lexer::{literal::strip_strings, marker::cut_line_comment},
     rules_self_import::{
         expand::{attr_resume, expand},
-        resolve::{char_line_starts, is_self_hit, resolve_full, strip_alias},
+        resolve::{char_line_starts, is_self_hit, is_self_rooted, resolve_full, strip_alias},
         token::{match_cfg_test, match_mod_decl, match_use_kw},
     },
 };
@@ -216,6 +216,9 @@ impl<'a> SelfScan<'a> {
             .collect();
         if segs.is_empty() {
             return None;
+        }
+        if is_self_rooted(&segs) {
+            return self.finding_at(sl);
         }
         let full = resolve_full(&segs, curpath)?;
         is_self_hit(&full, curpath)

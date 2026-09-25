@@ -12,6 +12,10 @@ use crate::{
 };
 
 /// Use imports resolving into the file own module.
+///
+/// Flags `crate::` paths resolving into the current module as well as any
+/// `self::`-rooted use (own items and child modules); prefer `crate::`-relative
+/// imports instead.
 #[must_use]
 pub fn self_imports(files: &[SourceFile]) -> Vec<String> {
     let stems = src_gated_stems(files);
@@ -72,6 +76,38 @@ mod tests {
             &["use crate::bar::Baz;", "pub struct Bar;"],
         )];
         assert_eq!(self_imports(&files).len(), 0);
+    }
+
+    #[test]
+    fn self_child_use_flagged() {
+        let files = vec![test_file(
+            "src/library/artwork.rs",
+            &["use self::thumbnail::generate_thumbnails;"],
+        )];
+        assert_eq!(self_imports(&files).len(), 1);
+    }
+
+    #[test]
+    fn self_brace_group_flagged() {
+        let files = vec![test_file(
+            "src/library/artwork.rs",
+            &["use {self::thumbnail::generate_thumbnails, crate::app::xdg};"],
+        )];
+        assert_eq!(self_imports(&files).len(), 1);
+    }
+
+    #[test]
+    fn self_in_test_exempt() {
+        let files = vec![test_file(
+            "src/foo.rs",
+            &[
+                "#[cfg(test)]",
+                "mod tests {",
+                "    use self::inner::Helper;",
+                "}",
+            ],
+        )];
+        assert!(self_imports(&files).is_empty(), "test suites stay silent");
     }
 
     #[test]

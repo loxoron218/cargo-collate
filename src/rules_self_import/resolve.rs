@@ -84,6 +84,12 @@ pub fn resolve_full(segs: &[String], curpath: &[String]) -> Option<Vec<String>> 
     None
 }
 
+/// True if import segments are rooted at the current module via `self`.
+#[must_use]
+pub fn is_self_rooted(segs: &[String]) -> bool {
+    segs.first().is_some_and(|root| root.as_str() == "self")
+}
+
 /// True if an absolute path resolves into the current module.
 #[must_use]
 pub fn is_self_hit(full: &[String], curpath: &[String]) -> bool {
