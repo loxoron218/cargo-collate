@@ -5,6 +5,7 @@ pub mod hygiene;
 pub mod layout;
 pub mod manifest;
 pub mod naming;
+pub mod sync;
 pub mod underscore;
 
 use crate::{
@@ -94,16 +95,6 @@ pub fn cfg_test_files(files: &[SourceFile]) -> Vec<String> {
         .iter()
         .filter(|f| f.lines.iter().any(|l| is_real_cfg_line(l)))
         .map(|f| f.path.clone())
-        .collect()
-}
-
-/// Source files over the line limit.
-#[must_use]
-pub fn long_files(files: &[SourceFile]) -> Vec<String> {
-    files
-        .iter()
-        .filter(|f| f.lines.len() > 400)
-        .map(|f| format!("{}: {} lines", f.path, f.lines.len()))
         .collect()
 }
 

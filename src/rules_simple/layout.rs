@@ -6,6 +6,8 @@
 //! scanned `.rs` file counts, including `docs/`, `fuzz/`, `examples/`, and
 //! other non-standard roots.
 
+use crate::scan::SourceFile;
+
 /// Scan leaves measured from; the outermost match wins.
 ///
 /// Complete Cargo auto-discovered target directories
@@ -100,6 +102,16 @@ pub fn deep_nesting(rs_files: &[String]) -> Vec<String> {
     hits.sort();
     hits.dedup();
     hits
+}
+
+/// Source files over the line limit.
+#[must_use]
+pub fn long_files(files: &[SourceFile]) -> Vec<String> {
+    files
+        .iter()
+        .filter(|f| f.lines.len() > 400)
+        .map(|f| format!("{}: {} lines", f.path, f.lines.len()))
+        .collect()
 }
 
 #[cfg(test)]

@@ -1,0 +1,261 @@
+//! `use` statement collection and lock import resolution.
+
+use crate::{
+    lexer::marker::cut_line_comment,
+    rules_imports::rank::is_use_start,
+    rules_simple::sync::detect::{SYNC_ITEMS, is_ident_byte, is_word_start},
+    scan::SourceFile,
+};
+
+/// One joined `use` statement with its source range.
+#[derive(Debug)]
+pub struct UseBlock {
+    /// Zero-based line where the statement starts.
+    pub start: usize,
+    /// Zero-based line where the statement ends.
+    pub end: usize,
+    /// Joined code of the statement without line comments.
+    pub joined: String,
+}
+
+/// True if `word` matches at `i` with boundaries on both sides.
+fn word_at(bytes: &[u8], i: usize, word: &[u8]) -> bool {
+    let after = i.saturating_add(word.len());
+    is_word_start(bytes, i)
+        && bytes.get(after).is_none_or(|b| !is_ident_byte(*b))
+        && bytes.get(i..after) == Some(word)
+}
+
+/// End index and joined code of the `use` statement at `start`, if closed.
+fn use_span(file: &SourceFile, start: usize) -> Option<(usize, String)> {
+    let first = file.stripped.get(start)?;
+    let mut joined = cut_line_comment(first).to_owned();
+    let mut end = start;
+    while !joined.contains(';') {
+        let next = file.stripped.get(end.saturating_add(1))?;
+        end = end.saturating_add(1);
+        joined.push('\n');
+        joined.push_str(cut_line_comment(next));
+    }
+    Some((end, joined))
+}
+
+/// Joined `use` statements of one file with line ranges.
+fn collect_use_blocks(file: &SourceFile) -> Vec<UseBlock> {
+    let mut out = Vec::new();
+    let mut idx = 0;
+    while idx < file.stripped.len() {
+        let Some(code) = file.stripped.get(idx) else {
+            break;
+        };
+        if !is_use_start(cut_line_comment(code)) {
+            idx = idx.saturating_add(1);
+            continue;
+        }
+        let Some((end, joined)) = use_span(file, idx) else {
+            break;
+        };
+        out.push(UseBlock {
+            start: idx,
+            end,
+            joined,
+        });
+        idx = end.saturating_add(1);
+    }
+    out
+}
+
+/// Blocks and per-block std lock names of one file.
+#[must_use]
+pub fn use_blocks_with_locks(file: &SourceFile) -> (Vec<UseBlock>, Vec<Vec<String>>) {
+    let blocks = collect_use_blocks(file);
+    let mut names = Vec::new();
+    for block in &blocks {
+        names.push(block_std_names(&block.joined));
+    }
+    (blocks, names)
+}
+
+/// Text after the leading `use` keyword of a joined statement.
+fn use_body(joined: &str) -> String {
+    let bytes = joined.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if word_at(bytes, i, b"use".as_slice()) {
+            return joined.get(i.saturating_add(3)..).unwrap_or("").to_owned();
+        }
+        i = i.saturating_add(1);
+    }
+    String::new()
+}
+
+/// Push the trimmed slice as one entry, if non-empty.
+fn push_top_entry(out: &mut Vec<String>, text: &str, start: usize, end: usize) {
+    if let Some(part) = text.get(start..end)
+        && !part.trim().is_empty()
+    {
+        out.push(part.trim().to_owned());
+    }
+}
+
+/// Top-level comma entries of `text`, keeping nested braces whole.
+fn split_top_level(text: &str) -> Vec<String> {
+    let bytes = text.as_bytes();
+    let mut out = Vec::new();
+    let mut depth: i32 = 0;
+    let mut start = 0;
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes.get(i) {
+            Some(b'{') => depth = depth.saturating_add(1),
+            Some(b'}') => depth = depth.saturating_sub(1),
+            Some(b',') if depth == 0 => {
+                push_top_entry(&mut out, text, start, i);
+                start = i.saturating_add(1);
+            }
+            Some(_) | None => {}
+        }
+        i = i.saturating_add(1);
+    }
+    push_top_entry(&mut out, text, start, text.len());
+    out
+}
+
+/// Byte index of the `}` matching the `{` at `open`, if any.
+fn find_matching_brace(text: &str, open: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let mut depth: i32 = 0;
+    let mut i = open;
+    while i < bytes.len() {
+        match bytes.get(i) {
+            Some(b'{') => depth = depth.saturating_add(1),
+            Some(b'}') if depth == 1 => return Some(i),
+            Some(b'}') => depth = depth.saturating_sub(1),
+            Some(_) | None => {}
+        }
+        i = i.saturating_add(1);
+    }
+    None
+}
+
+/// Push leaf `use` paths of `text` with `prefix`, expanding braces.
+fn expand_tree(text: &str, prefix: &str, out: &mut Vec<String>) {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return;
+    }
+    let Some(open) = trimmed.find('{') else {
+        out.push(format!("{prefix}{trimmed}"));
+        return;
+    };
+    let Some(close) = find_matching_brace(trimmed, open) else {
+        out.push(format!("{prefix}{trimmed}"));
+        return;
+    };
+    let head = trimmed.get(..open).unwrap_or("");
+    let Some(inner) = trimmed.get(open.saturating_add(1)..close) else {
+        return;
+    };
+    let mut next = prefix.to_owned();
+    next.push_str(head);
+    for entry in split_top_level(inner) {
+        expand_tree(&entry, &next, out);
+    }
+}
+
+/// Leaf `use` paths of one statement body.
+fn expand_use_body(body: &str) -> Vec<String> {
+    let cleaned = body.trim().trim_end_matches(';').trim().to_owned();
+    let mut out = Vec::new();
+    expand_tree(&cleaned, "", &mut out);
+    out
+}
+
+/// Path and alias parts of a leaf around a word-boundary `as`, if any.
+fn alias_split(leaf: &str) -> (&str, Option<&str>) {
+    let bytes = leaf.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if word_at(bytes, i, b"as".as_slice()) {
+            let path = leaf.get(..i).unwrap_or("");
+            let alias = leaf.get(i.saturating_add(2)..).unwrap_or("").trim();
+            return (path, Some(alias));
+        }
+        i = i.saturating_add(1);
+    }
+    (leaf, None)
+}
+
+/// Path segments of a leaf before any `as` alias.
+fn leaf_segments(leaf: &str) -> Vec<String> {
+    let mut segments = Vec::new();
+    for part in alias_split(leaf).0.split("::") {
+        let segment = part.trim().trim_start_matches("r#");
+        if !segment.is_empty() {
+            segments.push(segment.to_owned());
+        }
+    }
+    segments
+}
+
+/// Local name of a leaf after any `as` alias, if any.
+fn leaf_alias(leaf: &str) -> Option<String> {
+    let alias = alias_split(leaf).1?;
+    let name = alias.trim().trim_start_matches("r#");
+    (!name.is_empty()).then(|| name.to_owned())
+}
+
+/// True if `segments` name a `std::sync` lock or glob.
+fn is_sync_path(segments: &[String], last: &str) -> bool {
+    segments.len() == 3
+        && segments.first().is_some_and(|head| head.as_str() == "std")
+        && segments.get(1).is_some_and(|mid| mid.as_str() == "sync")
+        && segments.get(2).is_some_and(|tail| tail.as_str() == last)
+}
+
+/// True if `leaf` is a `std::sync::*` glob import.
+fn is_std_glob(leaf: &str) -> bool {
+    is_sync_path(&leaf_segments(leaf), "*")
+}
+
+/// Local name when `leaf` imports a `std` sync item, if any.
+fn std_lock_local(leaf: &str) -> Option<String> {
+    let segments = leaf_segments(leaf);
+    let is_lock = SYNC_ITEMS.iter().any(|name| is_sync_path(&segments, name));
+    if !is_lock {
+        return None;
+    }
+    if let Some(alias) = leaf_alias(leaf) {
+        return Some(alias);
+    }
+    segments.get(2).cloned()
+}
+
+/// Push the std lock name of `leaf` to `out`, if any.
+fn extend_lock_name(leaf: &str, out: &mut Vec<String>) {
+    if let Some(name) = std_lock_local(leaf) {
+        out.push(name);
+    }
+}
+
+/// Push every `SYNC_ITEMS` name to `out` for a glob import.
+fn extend_glob_names(out: &mut Vec<String>) {
+    for name in SYNC_ITEMS {
+        out.push(name.to_owned());
+    }
+}
+
+/// Local lock names a joined `use` statement pulls from `std`.
+fn block_std_names(joined: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for leaf in expand_use_body(&use_body(joined)) {
+        if is_std_glob(&leaf) {
+            extend_glob_names(&mut out);
+        } else {
+            extend_lock_name(&leaf, &mut out);
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}

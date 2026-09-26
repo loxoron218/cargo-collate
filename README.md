@@ -52,6 +52,7 @@ workspace scope is the shared git toplevel.
 | `qualified_paths` | Qualified call sites; import via `use` instead with constructors exempt. |
 | `scoped_pub_hits` | Scoped pub visibility; keep visibility explicit and consistent. |
 | `self_imports` | Use imports resolving into the file own module; refer to own items directly instead. |
+| `std_sync_hits` | Std Mutex/RwLock/Condvar; use parking_lot::Mutex/RwLock/Condvar instead. |
 | `stray_mod_rs` | Nested indexes that are not target roots; use parent indexes instead. |
 | `stray_test_comments` | Stray comments inside cfg-test modules with docs exempt. |
 | `stray_uses` | Stray use after code; keep all use at module top. Complements `clippy::arbitrary_source_item_ordering`. |

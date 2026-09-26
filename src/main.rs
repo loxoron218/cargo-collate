@@ -46,10 +46,11 @@ use {
             doc_blank_hits, dot_ok_hits, low_log_hits, parent_hits, path_include_hits,
             scoped_pub_hits,
         },
-        layout::deep_nesting,
-        line_comments, long_files,
+        layout::{deep_nesting, long_files},
+        line_comments,
         manifest::stray_mod_rs,
         naming::{collision::duplicate_stems, grouping::generic_dirs},
+        sync::hits::std_sync_hits,
         underscore::underscore_idents,
     },
     rules_tests::{check_test_rules, test_docs::unnecessary_test_docs},
@@ -262,6 +263,11 @@ fn check_path_rules(output: &mut String, files: &[SourceFile]) -> bool {
         output,
         "Prelude imports inside gtk family groups; use libadwaita prelude instead.",
         &prelude_groups(files),
+    );
+    fail |= show(
+        output,
+        "Std sync Mutex/RwLock/Condvar; use parking_lot instead.",
+        &std_sync_hits(files),
     );
     fail |= show(
         output,
