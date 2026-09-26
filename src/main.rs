@@ -50,7 +50,7 @@ use {
         line_comments,
         manifest::stray_mod_rs,
         naming::{collision::duplicate_stems, grouping::generic_dirs},
-        sync::hits::std_sync_hits,
+        sync::{hits::std_sync_hits, thread_hits::thread_unsafe_hits},
         underscore::underscore_idents,
     },
     rules_tests::{check_test_rules, test_docs::unnecessary_test_docs},
@@ -268,6 +268,11 @@ fn check_path_rules(output: &mut String, files: &[SourceFile]) -> bool {
         output,
         "Std sync Mutex/RwLock/Condvar; use parking_lot instead.",
         &std_sync_hits(files),
+    );
+    fail |= show(
+        output,
+        "Thread-unsafe Cell/RefCell/Rc; use Atomics, parking_lot, OnceLock, or Arc instead.",
+        &thread_unsafe_hits(files),
     );
     fail |= show(
         output,

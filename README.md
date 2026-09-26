@@ -57,6 +57,7 @@ workspace scope is the shared git toplevel.
 | `stray_test_comments` | Stray comments inside cfg-test modules with docs exempt. |
 | `stray_uses` | Stray use after code; keep all use at module top. Complements `clippy::arbitrary_source_item_ordering`. |
 | `thiserror_alias` | Aliased thiserror::Error; keep thiserror plain and alias the other Error instead. |
+| `thread_unsafe_hits` | Thread-unsafe Cell/RefCell/Rc; use Atomics, parking_lot, OnceLock, or Arc instead. |
 | `underscore_idents` | Underscore-prefixed identifiers; use meaningful names instead of discards. |
 | `unnecessary_aliases` | Unnecessary import aliases; remove `as` without conflicts. |
 | `unnecessary_errors` | Unnecessary Errors sections; private items and non-Result items never require them. Complements `clippy::missing_errors_doc`. |

@@ -1,5 +1,6 @@
-//! Std sync lock detectors for `Mutex`, `RwLock`, and `Condvar`.
+//! Std sync lock and thread-unsafe cell and rc detectors.
 
 pub mod detect;
 pub mod hits;
 pub mod locks;
+pub mod thread_hits;

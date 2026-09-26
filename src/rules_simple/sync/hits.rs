@@ -52,21 +52,23 @@ fn defines_at(bytes: &[u8], i: usize, name: &str) -> bool {
 }
 
 /// True if any line of `file` defines `name` as a local item.
-fn file_defines(file: &SourceFile, name: &str) -> bool {
+#[must_use]
+pub fn file_defines(file: &SourceFile, name: &str) -> bool {
     file.stripped
         .iter()
         .any(|code| defines_name(cut_line_comment(code), name))
 }
 
 /// True if `idx` sits inside any joined `use` statement range.
-fn line_in_blocks(idx: usize, blocks: &[UseBlock]) -> bool {
+#[must_use]
+pub fn line_in_blocks(idx: usize, blocks: &[UseBlock]) -> bool {
     blocks
         .iter()
         .any(|block| idx >= block.start && idx <= block.end)
 }
 
 /// Push one `path:line:content` finding for `idx`.
-fn push_hit_at(out: &mut Vec<String>, file: &SourceFile, idx: usize) {
+pub fn push_hit_at(out: &mut Vec<String>, file: &SourceFile, idx: usize) {
     if let Some(line) = file.lines.get(idx) {
         out.push(format!("{}:{}:{line}", file.path, idx.saturating_add(1)));
     }
@@ -98,7 +100,8 @@ fn path_qualified_before(bytes: &[u8], i: usize) -> bool {
 }
 
 /// True if `code` uses `name` bare instead of inside a `::` path.
-fn has_bare_name(code: &str, name: &str) -> bool {
+#[must_use]
+pub fn has_bare_name(code: &str, name: &str) -> bool {
     let bytes = code.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
@@ -133,6 +136,17 @@ pub fn std_sync_hits(files: &[SourceFile]) -> Vec<String> {
 /// Append `std` lock findings of one file to `out`.
 fn check_file_std_sync(file: &SourceFile, out: &mut Vec<String>) {
     let (blocks, per_block) = use_blocks_with_locks(file);
+    let names = collect_names(file, &blocks, per_block, out);
+    check_body_with(file, &blocks, &names, out, line_violates);
+}
+
+/// Collect banned names from use blocks, pushing import hits to `out`.
+pub fn collect_names(
+    file: &SourceFile,
+    blocks: &[UseBlock],
+    per_block: Vec<Vec<String>>,
+    out: &mut Vec<String>,
+) -> Vec<String> {
     let mut names = Vec::new();
     for (block, local) in blocks.iter().zip(per_block) {
         if !local.is_empty() {
@@ -143,15 +157,16 @@ fn check_file_std_sync(file: &SourceFile, out: &mut Vec<String>) {
     names.sort();
     names.dedup();
     names.retain(|name| !file_defines(file, name));
-    check_body_lines(file, &blocks, &names, out);
+    names
 }
 
 /// Append explicit and resolved bare-name findings of one file to `out`.
-fn check_body_lines(
+pub fn check_body_with(
     file: &SourceFile,
     blocks: &[UseBlock],
     names: &[String],
     out: &mut Vec<String>,
+    violates: fn(&str, &[String]) -> bool,
 ) {
     for (idx, code) in file.stripped.iter().enumerate() {
         if line_in_blocks(idx, blocks) {
@@ -161,7 +176,7 @@ fn check_body_lines(
         if tail.contains("/*") {
             continue;
         }
-        if line_violates(tail, names) {
+        if violates(tail, names) {
             push_hit_at(out, file, idx);
         }
     }
