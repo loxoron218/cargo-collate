@@ -31,7 +31,9 @@ use std::{
 };
 
 use {
-    rules_alias::{thiserror::thiserror_alias, unnecessary_aliases},
+    rules_alias::{
+        first_alias::first_occurrence_alias, thiserror::thiserror_alias, unnecessary_aliases,
+    },
     rules_docs::{
         missing_docs::{doc_header::missing_mod_docs, missing_fn_docs},
         must_use::unnecessary_must_use,
@@ -278,6 +280,12 @@ fn check_path_rules(output: &mut String, files: &[SourceFile]) -> bool {
         output,
         "Unnecessary import aliases; remove as without conflicts.",
         &unnecessary_aliases(files),
+    );
+    fail |= show(
+        output,
+        "Import alias on first occurrence; keep the first import plain and alias subsequent \
+         colliding imports instead.",
+        &first_occurrence_alias(files),
     );
     fail |= show(
         output,

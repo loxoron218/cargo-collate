@@ -1,9 +1,11 @@
-//! Unnecessary import alias detection.
+//! Import alias detection.
 //!
 //! Flags `use … as …` where the alias is not needed to resolve a name
-//! conflict within the same file.
+//! conflict within the same file, and where the alias sits on the first
+//! occurrence instead of a subsequent colliding import.
 
 pub mod collect;
+pub mod first_alias;
 pub mod import_alias;
 pub mod local_scope;
 pub mod thiserror;

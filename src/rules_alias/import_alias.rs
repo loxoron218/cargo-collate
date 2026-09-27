@@ -227,6 +227,12 @@ fn parent_original(segs: &[&str]) -> Option<String> {
     Some(parent.to_owned())
 }
 
+/// True if `name` collides with the standard library prelude.
+#[must_use]
+pub fn is_prelude(name: &str) -> bool {
+    PRELUDE.contains(&name)
+}
+
 /// True if an alias can be removed without colliding in the same file.
 #[must_use]
 pub fn is_unnecessary_alias(

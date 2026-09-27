@@ -20,7 +20,7 @@ CLIs).
 - `src/scan.rs` — process runners, file discovery (`rg --files`) and loading
 - `src/gating.rs` — shared cfg-test gating helpers
 - `src/lexer.rs` + `src/lexer/` — comment/string lexing, markers, qualified paths, visibility
-- `src/rules_alias.rs` + `src/rules_alias/` — unnecessary import aliases, thiserror alias
+- `src/rules_alias.rs` + `src/rules_alias/` — unnecessary import aliases, first-occurrence alias, thiserror alias
 - `src/rules_docs.rs` + `src/rules_docs/` — missing docs, must-use, doc sections
 - `src/rules_imports.rs` + `src/rules_imports/` — import grouping, stray uses
 - `src/rules_paths.rs` + `src/rules_paths/` — qualified paths, enum variants, prelude groups

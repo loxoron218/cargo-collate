@@ -33,6 +33,7 @@ workspace scope is the shared git toplevel.
 | `duplicate_stems` | Duplicate module stems; keep every word of file names unique codebase-wide. |
 | `enum_variants` | Enum variants at call sites; import variants via nested `use` instead. |
 | `expect_hits` | Expect attributes; fix lints instead of suppressing them. |
+| `first_occurrence_alias` | Import alias on first occurrence; keep the first import plain and alias subsequent colliding imports instead. |
 | `generic_dirs` | Generic module directories; group by capability/domain instead. |
 | `inner_test_gates` | Inner cfg-test gates; use cfg(test) mod tests instead. |
 | `line_comments` | Remove all line comments. |

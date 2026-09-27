@@ -64,7 +64,7 @@ fn collect_stmt_hits(
 }
 
 /// True if `path` names exactly `thiserror::Error`.
-fn is_thiserror_error(path: &str) -> bool {
+pub fn is_thiserror_error(path: &str) -> bool {
     let trimmed = path.trim();
     let without_leading = trimmed.strip_prefix("::").unwrap_or(trimmed);
     let segs: Vec<&str> = without_leading
