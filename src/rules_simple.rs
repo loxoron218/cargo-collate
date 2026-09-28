@@ -6,6 +6,10 @@ pub mod layout;
 pub mod manifest;
 pub mod naming;
 pub mod sync;
+pub mod tracing;
+pub mod tracing_mask;
+pub mod tracing_parse;
+pub mod tracing_string;
 pub mod underscore;
 
 use crate::{

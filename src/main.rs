@@ -53,6 +53,7 @@ use {
         manifest::stray_mod_rs,
         naming::{collision::duplicate_stems, grouping::generic_dirs},
         sync::{hits::std_sync_hits, thread_hits::thread_unsafe_hits},
+        tracing::unstructured_tracing_hits,
         underscore::underscore_idents,
     },
     rules_tests::{check_test_rules, test_docs::unnecessary_test_docs},
@@ -260,6 +261,11 @@ fn check_path_rules(output: &mut String, files: &[SourceFile]) -> bool {
         output,
         "Low-level logging; use info, warn, or error for significant events.",
         &low_log_hits(files),
+    );
+    fail |= show(
+        output,
+        "Unstructured tracing; use fields for structured data, never interpolated strings.",
+        &unstructured_tracing_hits(files),
     );
     fail |= show(
         output,

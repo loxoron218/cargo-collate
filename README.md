@@ -66,3 +66,4 @@ workspace scope is the shared git toplevel.
 | `unnecessary_panics` | Unnecessary Panics sections; private items and pure public items never require them. Complements `clippy::missing_panics_doc`. |
 | `unnecessary_test_docs` | Comments on private test-module functions; shared pub helpers stay documented. |
 | `unnecessary_types` | Unnecessary type definitions; aliases removable warning-free at every use site never require them. Complements `clippy::type_complexity`. |
+| `unstructured_tracing` | Unstructured tracing; use fields for structured data, never interpolated strings. |
