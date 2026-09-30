@@ -382,6 +382,77 @@ fn check_file_doc_blank(file: &SourceFile) -> Vec<String> {
     out
 }
 
+/// True if stripped `line` is a full-line `//!` module-doc line.
+///
+/// Leading whitespace stays allowed so indented inner modules still scan;
+/// string-blanked text keeps `//!` inside raw strings empty and silent.
+fn is_mod_doc_line(stripped: &str) -> bool {
+    stripped.trim_start().starts_with("//!")
+}
+
+/// Index of the nearest non-blank line at or above `from`, if any.
+///
+/// Blank runs of any length resolve to the line they follow, so split
+/// module docs flag once on the resuming `//!` line.
+fn prev_non_blank(stripped: &[String], from: usize) -> Option<usize> {
+    let mut cursor = from;
+    loop {
+        if stripped
+            .get(cursor)
+            .is_some_and(|line| !line.trim().is_empty())
+        {
+            return Some(cursor);
+        }
+        cursor = cursor.checked_sub(1)?;
+    }
+}
+
+/// Split module-doc findings for one file.
+///
+/// Flags a `//!` line preceded by at least one empty line whose nearest
+/// non-blank predecessor is another `//!` line.
+fn check_file_split_mod_doc(file: &SourceFile) -> Vec<String> {
+    let mut out = Vec::new();
+    for (idx, stripped) in file.stripped.iter().enumerate() {
+        if !is_mod_doc_line(stripped) {
+            continue;
+        }
+        let Some(prev_idx) = idx.checked_sub(1) else {
+            continue;
+        };
+        if file
+            .stripped
+            .get(prev_idx)
+            .is_none_or(|line| !line.trim().is_empty())
+        {
+            continue;
+        }
+        let Some(above) = prev_non_blank(&file.stripped, prev_idx) else {
+            continue;
+        };
+        if file
+            .stripped
+            .get(above)
+            .is_none_or(|line| !is_mod_doc_line(line))
+        {
+            continue;
+        }
+        if let Some(line) = file.lines.get(idx) {
+            out.push(format!("{}:{}:{line}", file.path, idx.saturating_add(1)));
+        }
+    }
+    out
+}
+
+/// Split `//!` blocks separated by empty lines.
+///
+/// Paragraph breaks in module docs use a bare `//!` line, never an empty
+/// line; a `//!` line resumes after one or more empty lines flags itself
+/// when the nearest non-blank line above is another `//!` line.
+pub fn split_mod_doc_hits(files: &[SourceFile]) -> Vec<String> {
+    files.iter().flat_map(check_file_split_mod_doc).collect()
+}
+
 /// Doc `///` openers without a preceding blank line.
 ///
 /// Only the first line of a consecutive doc block is checked; continuations,

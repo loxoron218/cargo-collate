@@ -110,7 +110,7 @@ mod tests {
             cfg_test_files,
             hygiene::{
                 doc_blank_hits, dot_ok_hits, has_dot_ok, has_include_macro, has_low_log,
-                has_parent_path, has_path_attr, has_scoped_pub,
+                has_parent_path, has_path_attr, has_scoped_pub, split_mod_doc_hits,
             },
             is_real_cfg_line, line_comments,
             manifest::{manifest_paths_for, package_dir_for, prefixed_manifest_roots},
@@ -392,5 +392,81 @@ mod tests {
             ],
         )];
         assert_eq!(doc_blank_hits(&method).len(), 1, "impl docs still flag");
+    }
+
+    #[test]
+    fn split_mod_doc_flags_bare_blank() {
+        let files = vec![test_file(
+            "src/a.rs",
+            &["//! First line.", "", "//! Second line."],
+        )];
+        assert_eq!(split_mod_doc_hits(&files).len(), 1);
+        let clean = vec![test_file(
+            "src/a.rs",
+            &["//! First line.", "//!", "//! Second line."],
+        )];
+        assert!(
+            split_mod_doc_hits(&clean).is_empty(),
+            "bare //! separators stay silent"
+        );
+    }
+
+    #[test]
+    fn split_mod_doc_edge_shapes() {
+        let single = vec![test_file("src/a.rs", &["//! Only line."])];
+        assert!(
+            split_mod_doc_hits(&single).is_empty(),
+            "single line stays silent"
+        );
+        let short = vec![test_file("src/a.rs", &["//! One.", "//! Two."])];
+        assert!(
+            split_mod_doc_hits(&short).is_empty(),
+            "contiguous lines stay silent"
+        );
+        let ws_blank = vec![test_file("src/a.rs", &["//! One.", "   ", "//! Two."])];
+        assert_eq!(
+            split_mod_doc_hits(&ws_blank).len(),
+            1,
+            "whitespace counts as blank"
+        );
+        let outer = vec![test_file("src/a.rs", &["/// One.", "", "/// Two."])];
+        assert!(
+            split_mod_doc_hits(&outer).is_empty(),
+            "outer docs stay silent"
+        );
+        let run = vec![test_file("src/a.rs", &["//! One.", "", "", "//! Two."])];
+        assert_eq!(
+            split_mod_doc_hits(&run).len(),
+            1,
+            "blank runs flag once on the resuming line"
+        );
+        let code_between = vec![test_file(
+            "src/a.rs",
+            &["//! One.", "", "fn f() {}", "", "//! Two."],
+        )];
+        assert!(
+            split_mod_doc_hits(&code_between).is_empty(),
+            "code between blocks stays silent"
+        );
+        let bof_blank = vec![test_file("src/a.rs", &["", "//! One."])];
+        assert!(
+            split_mod_doc_hits(&bof_blank).is_empty(),
+            "leading blank stays silent"
+        );
+        let in_string = vec![test_file(
+            "src/a.rs",
+            &[
+                "let q = r#\"",
+                "//! One.",
+                "",
+                "//! Two.",
+                "\"#;",
+                "fn f() {}",
+            ],
+        )];
+        assert!(
+            split_mod_doc_hits(&in_string).is_empty(),
+            "raw interiors never flag"
+        );
     }
 }

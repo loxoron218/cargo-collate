@@ -53,6 +53,7 @@ workspace scope is the shared git toplevel.
 | `prelude_groups` | Prelude imports inside gtk family groups; use libadwaita prelude instead. |
 | `qualified_paths` | Qualified call sites; import via `use` instead with constructors exempt. |
 | `scoped_pub_hits` | Scoped pub visibility; keep visibility explicit and consistent. |
+| `split_mod_doc_hits` | Split module docs; keep `//!` blocks contiguous with `//!` separators, never empty lines. |
 | `self_imports` | Use imports resolving into the file own module; refer to own items directly instead. |
 | `std_sync_hits` | Std Mutex/RwLock/Condvar; use parking_lot::Mutex/RwLock/Condvar instead. |
 | `stray_mod_rs` | Nested indexes that are not target roots; use parent indexes instead. |

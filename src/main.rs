@@ -47,7 +47,7 @@ use {
         expect::expect_hits,
         hygiene::{
             doc_blank_hits, dot_ok_hits, low_log_hits, parent_hits, path_include_hits,
-            scoped_pub_hits,
+            scoped_pub_hits, split_mod_doc_hits,
         },
         layout::{deep_nesting, long_files},
         line_comments,
@@ -133,6 +133,11 @@ fn check_name_rules(output: &mut String, dirs: &[String], files: &[SourceFile]) 
         output,
         "Doc comments without a preceding blank line; separate /// blocks with an empty line.",
         &doc_blank_hits(files),
+    );
+    fail |= show(
+        output,
+        "Split module docs; keep //! blocks contiguous with //! separators, never empty lines.",
+        &split_mod_doc_hits(files),
     );
     fail
 }

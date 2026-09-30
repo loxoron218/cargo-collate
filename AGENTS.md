@@ -35,7 +35,7 @@ text per lint.
 - `src/rules_simple.rs` + `src/rules_simple/` — `deep_nesting`, `default_features_hits`,
   `doc_blank_hits`, `dot_ok_hits`, `duplicate_stems`, `expect_hits`, `generic_dirs`,
   `line_comments`, `long_files`, `low_log_hits`, `multi_cfg_files`, `parent_hits`,
-  `path_include_hits`, `scoped_pub_hits`, `std_sync_hits`, `stray_mod_rs`, `thread_unsafe_hits`,
+  `path_include_hits`, `scoped_pub_hits`, `split_mod_doc_hits`, `std_sync_hits`, `stray_mod_rs`, `thread_unsafe_hits`,
   `underscore_idents`, `unstructured_tracing_hits` (quote tracking in `dependencies/quotes.rs`,
   TOML scanners in `dependencies/toml.rs`, call grouping and argument analysis in
   `tracing_parse.rs`, string-literal masking in `tracing_mask.rs` plus `tracing_string.rs`)
