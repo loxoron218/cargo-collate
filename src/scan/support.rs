@@ -6,8 +6,17 @@
 
 use crate::{
     lexer::literal::stripped_lines,
-    scan::{SourceFile, discover_roots, scope_for},
+    scan::{ManifestFile, SourceFile, discover_roots, scope_for},
 };
+
+/// Build a test-only manifest file from lines.
+#[must_use]
+pub fn test_manifest(path: &str, lines: &[&str]) -> ManifestFile {
+    ManifestFile {
+        path: path.to_owned(),
+        lines: lines.iter().map(|s| (*s).to_owned()).collect(),
+    }
+}
 
 /// Build a test-only source file from lines.
 #[must_use]

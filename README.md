@@ -27,6 +27,7 @@ workspace scope is the shared git toplevel.
 | `anyhow_leak` | Anyhow in public API; library uses typed thiserror enums. |
 | `anyhow_site` | Anyhow outside tests and binaries; library uses typed errors. |
 | `clone_check` | Copy-paste clones across sources; ignore duplicates that are only import blocks. |
+| `default_features_hits` | Crate dependencies without `default-features = false`; add the opt-out with only required features. |
 | `deep_nesting` | Module nesting over the depth limit; keep module nesting shallow (max 2). |
 | `doc_blank_hits` | Doc comments without a preceding blank line; separate `///` blocks with an empty line. |
 | `dot_ok_hits` | Dot-ok error swallows; propagate errors with context instead. |

@@ -1,5 +1,6 @@
 //! Text-level rules without cross-line state.
 
+pub mod dependencies;
 pub mod expect;
 pub mod hygiene;
 pub mod layout;

@@ -2,9 +2,9 @@
 //!
 //! The `rg` (ripgrep, Rust) and `jscpd` (v5, Rust) CLIs stay as subprocesses:
 //! they keep their SIMD/parallel/gitignore behavior while `python3`, `awk`,
-//! `wc`, and `comm` are gone. Discovery scans every `.rs` file under the
-//! current dir, so workspace-excluded crates stay visible without relying on
-//! `cargo metadata`.
+//! `wc`, and `comm` are gone. Discovery scans every `.rs` file and every
+//! `Cargo.toml` under the current dir, so workspace-excluded crates stay
+//! visible without relying on `cargo metadata`.
 
 /// Test-only source-file builders.
 #[cfg(test)]
@@ -18,6 +18,15 @@ use std::{
 };
 
 use crate::lexer::literal::stripped_lines;
+
+/// A scanned Cargo manifest with its original lines.
+#[derive(Debug)]
+pub struct ManifestFile {
+    /// Path exactly as reported by `rg` (relative, e.g. `Cargo.toml`).
+    pub path: String,
+    /// Original lines without trailing newlines.
+    pub lines: Vec<String>,
+}
 
 /// A scanned Rust source file with its original lines.
 #[derive(Debug)]
@@ -56,7 +65,7 @@ pub fn have(cmd: &str) -> bool {
     })
 }
 
-/// Single scan root covering every `.rs` file.
+/// Single scan root covering every `.rs` file and `Cargo.toml`.
 ///
 /// `rg --files` enumerates recursively from here, so excluded crates,
 /// `fuzz/`, `xtask/`, and other non-standard layouts stay visible.
@@ -127,18 +136,17 @@ fn strip_dot_prefix(line: &str) -> &str {
     line.strip_prefix("./").unwrap_or(line)
 }
 
-/// `rg` file listing for `dirs`.
+/// `rg` file listing for one name glob in `dirs`.
 ///
 /// Skips `target/` and `vendor/` explicitly; `rg` already respects
 /// `.gitignore` for the rest. Leading `./` markers stay stripped so paths
 /// read like historical scan-root-relative hits.
-#[must_use]
-pub fn rg_files(dirs: &[String]) -> Vec<String> {
+fn rg_listed(glob: &str, dirs: &[String]) -> Vec<String> {
     rg_with_dirs(
         &[
             "--files",
             "--glob",
-            "*.rs",
+            glob,
             "--glob",
             "!target/**",
             "--glob",
@@ -150,6 +158,12 @@ pub fn rg_files(dirs: &[String]) -> Vec<String> {
     .map(|l| strip_dot_prefix(l.trim()).to_owned())
     .filter(|l| !l.is_empty())
     .collect()
+}
+
+/// `rg` source listing for `dirs`.
+#[must_use]
+pub fn rg_files(dirs: &[String]) -> Vec<String> {
+    rg_listed("*.rs", dirs)
 }
 
 /// `rg -n` search with literal (`-F`) or PCRE (`-P`) pattern.
@@ -178,6 +192,35 @@ pub fn rg_search(flag: &str, pattern: &str, dirs: &[String]) -> Vec<String> {
     .collect()
 }
 
+/// `rg` manifest listing for `dirs`.
+#[must_use]
+pub fn rg_manifests(dirs: &[String]) -> Vec<String> {
+    rg_listed("Cargo.toml", dirs)
+}
+
+/// Paths with their readable contents, skipping unreadable files.
+fn texts_of(paths: &[String]) -> Vec<(String, String)> {
+    paths
+        .iter()
+        .filter_map(|path| read_to_string(path).map_or(None, |text| Some((path.clone(), text))))
+        .collect()
+}
+
+/// Read every manifest `path`, skipping unreadable files.
+///
+/// Mirrors `load_files` without Rust lexing since manifests scan as raw
+/// TOML text.
+#[must_use]
+pub fn load_manifests(paths: &[String]) -> Vec<ManifestFile> {
+    texts_of(paths)
+        .into_iter()
+        .map(|(path, text)| ManifestFile {
+            path,
+            lines: text.lines().map(str::to_owned).collect(),
+        })
+        .collect()
+}
+
 /// Read every `path`, skipping unreadable files like the legacy script did.
 ///
 /// Every file shares the git toplevel as its workspace scope so excluded
@@ -185,19 +228,18 @@ pub fn rg_search(flag: &str, pattern: &str, dirs: &[String]) -> Vec<String> {
 #[must_use]
 pub fn load_files(paths: &[String]) -> Vec<SourceFile> {
     let root = git_root();
-    paths
-        .iter()
-        .filter_map(|path| {
-            read_to_string(path).map_or(None, |text| {
-                let lines: Vec<String> = text.lines().map(str::to_owned).collect();
-                let stripped = stripped_lines(&lines);
-                Some(SourceFile {
-                    path: path.clone(),
-                    ws: scope_for(path, &root),
-                    lines,
-                    stripped,
-                })
-            })
+    texts_of(paths)
+        .into_iter()
+        .map(|(path, text)| {
+            let lines: Vec<String> = text.lines().map(str::to_owned).collect();
+            let stripped = stripped_lines(&lines);
+            let ws = scope_for(&path, &root);
+            SourceFile {
+                path,
+                ws,
+                lines,
+                stripped,
+            }
         })
         .collect()
 }

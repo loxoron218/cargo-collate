@@ -13,6 +13,7 @@
 
 pub mod gating;
 pub mod lexer;
+pub mod report;
 pub mod rules_alias;
 pub mod rules_docs;
 pub mod rules_imports;
@@ -24,13 +25,12 @@ pub mod rules_types;
 pub mod scan;
 
 use std::{
-    env::args_os,
-    ffi::OsString,
-    io::{Write, stderr, stdout},
-    process::{Command, ExitCode},
+    io::{Write, stdout},
+    process::ExitCode,
 };
 
 use {
+    report::{clone_check, report_misuse, show, user_args},
     rules_alias::{
         first_alias::first_occurrence_alias, thiserror::thiserror_alias, unnecessary_aliases,
     },
@@ -43,6 +43,7 @@ use {
     rules_paths::{enum_variants, prelude::prelude_groups, qualified_paths},
     rules_self_import::self_imports,
     rules_simple::{
+        dependencies::default_features_hits,
         expect::expect_hits,
         hygiene::{
             doc_blank_hits, dot_ok_hits, low_log_hits, parent_hits, path_include_hits,
@@ -58,98 +59,11 @@ use {
     },
     rules_tests::{check_test_rules, test_docs::unnecessary_test_docs},
     rules_types::unnecessary_types,
-    scan::{SourceFile, discover_roots, have, load_files, rg_files, rg_search},
+    scan::{
+        SourceFile, discover_roots, have, load_files, load_manifests, rg_files, rg_manifests,
+        rg_search,
+    },
 };
-
-/// Append one rule section to `output`; returns true when it hit.
-pub fn show(output: &mut String, title: &str, hits: &[String]) -> bool {
-    if hits.is_empty() {
-        return false;
-    }
-    output.push_str("\n# ");
-    output.push_str(title);
-    output.push('\n');
-    for hit in hits {
-        output.push_str(hit);
-        output.push('\n');
-    }
-    true
-}
-
-/// Report misuse on standard error; returns process code 2.
-fn report_misuse(message: &str) -> i32 {
-    let mut handle = stderr().lock();
-    if writeln!(handle, "{message}").is_err() {
-        return 2;
-    }
-    2
-}
-
-/// Keep only clone sections before the details table.
-fn clone_sections(output: &str) -> Vec<String> {
-    let mut kept = Vec::new();
-    let mut emit = false;
-    for line in output.lines() {
-        if line.starts_with("Clone found") {
-            emit = true;
-            kept.push(line.to_owned());
-            continue;
-        }
-        if line.starts_with('┌') {
-            emit = false;
-            continue;
-        }
-        if emit {
-            kept.push(line.to_owned());
-        }
-    }
-    kept
-}
-
-/// Run the clone detector; returns findings with failed flag.
-///
-/// Skips `target/` and `vendor/` explicitly since `jscpd` ignores
-/// `.gitignore`, unlike `rg`.
-fn clone_check(dirs: &[String]) -> (Vec<String>, bool) {
-    let mut cmd = Command::new("jscpd");
-    let result = cmd
-        .arg("--format")
-        .arg("rust")
-        .arg("--no-colors")
-        .arg("--no-tips")
-        .arg("--absolute")
-        .arg("--exit-code")
-        .arg("1")
-        .arg("--ignore")
-        .arg("**/target/**,**/vendor/**")
-        .args(dirs)
-        .output();
-    match result {
-        Err(_) => (
-            vec!["ERROR: failed to execute clone detector".to_owned()],
-            true,
-        ),
-        Ok(out) => {
-            let findings = clone_sections(&String::from_utf8_lossy(&out.stdout));
-            let failed = !out.status.success() || !findings.is_empty();
-            (findings, failed)
-        }
-    }
-}
-
-/// User arguments after the binary and cargo subcommand names.
-///
-/// Cargo hands external subcommands their own name first, so a bare
-/// `cargo collate` run arrives with one argument to ignore.
-fn user_args() -> Vec<OsString> {
-    let args: Vec<OsString> = args_os().skip(1).collect();
-    let drop_first: bool = args.first().is_some_and(|first| first == "collate");
-    if drop_first {
-        args.into_iter().skip(1).collect()
-    } else {
-        args
-    }
-}
 
 /// Entry point without arguments; returns process code.
 fn run() -> i32 {
@@ -372,6 +286,12 @@ fn check_layout_rules(output: &mut String, dirs: &[String], files: &[SourceFile]
         output,
         "Duplicate module stems; keep every word of file names unique codebase-wide.",
         &duplicate_stems(&rg_files(dirs)),
+    );
+    fail |= show(
+        output,
+        "Crate dependencies without default-features = false; add default-features = false with \
+         only required features.",
+        &default_features_hits(&load_manifests(&rg_manifests(dirs))),
     );
 
     let (clones, clone_fail) = clone_check(dirs);
