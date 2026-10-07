@@ -21,7 +21,7 @@ use crate::{
         code_of, is_pub_sig, is_pub_trait_fn, item_args::body_forwards_item, joined_signature,
         return_tail, sig_returns_unit,
     },
-    scan::{SourceFile, indexed_lines},
+    scan::{SourceFile, collect_line_hits},
 };
 
 /// True if stripped `code` holds a `must_use` attribute.
@@ -204,15 +204,9 @@ fn must_use_at(lines: &[String], idx: usize) -> bool {
 /// or item-forwarding items.
 #[must_use]
 pub fn unnecessary_must_use(files: &[SourceFile]) -> Vec<String> {
-    files
-        .iter()
-        .flat_map(|file| {
-            indexed_lines(file)
-                .filter(|(_, (_, code))| has_must_use(&code_of(code)))
-                .filter(|(idx, _)| must_use_at(&file.stripped, *idx))
-                .map(|(idx, (line, _))| format!("{}:{}:{line}", file.path, idx.saturating_add(1)))
-        })
-        .collect()
+    collect_line_hits(files, |file, idx, _, code| {
+        has_must_use(&code_of(code)) && must_use_at(&file.stripped, idx)
+    })
 }
 
 #[cfg(test)]

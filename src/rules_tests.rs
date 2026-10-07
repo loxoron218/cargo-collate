@@ -13,7 +13,7 @@ pub mod test_docs;
 mod checks;
 
 use crate::{
-    rules_simple::{cfg_test_files, multi_cfg_files},
+    rules_simple::cfg_test::{cfg_test_files, multi_cfg_files},
     rules_tests::{
         boundary::{anyhow_leak, anyhow_site, missing_context},
         inner_gate::inner_test_gates,

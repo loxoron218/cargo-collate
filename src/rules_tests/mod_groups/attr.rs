@@ -5,7 +5,7 @@
 
 use crate::{
     lexer::word::{has_word, word_match_at},
-    rules_simple::is_real_cfg_line,
+    rules_simple::cfg_test::is_real_cfg_line,
     rules_tests::{
         order::{match_mod_head, strip_attrs},
         range::{brace_count, code_of},

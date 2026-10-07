@@ -188,3 +188,28 @@ pub fn stray_mod_rs(rs_files: &[String]) -> Vec<String> {
         .cloned()
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::rules_simple::manifest::{
+        manifest_paths_for, package_dir_for, prefixed_manifest_roots,
+    };
+
+    #[test]
+    fn package_dirs_cover_tool_trees() {
+        assert_eq!(package_dir_for("src/a.rs"), "");
+        assert_eq!(package_dir_for("collate/src/a.rs"), "collate");
+        assert_eq!(
+            package_dir_for("fuzz/fuzz_targets/parse.rs"),
+            "",
+            "manifest-less arbitrary roots stay repo-rooted"
+        );
+        let files = vec!["collate/src/a.rs".to_owned()];
+        assert_eq!(
+            manifest_paths_for(&files),
+            vec!["Cargo.toml".to_owned(), "collate/Cargo.toml".to_owned()]
+        );
+        let roots = prefixed_manifest_roots("collate/Cargo.toml", "[bin]\npath = \"src/main.rs\"");
+        assert_eq!(roots, vec!["collate/src/main.rs".to_owned()]);
+    }
+}

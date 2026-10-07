@@ -6,7 +6,7 @@ use crate::{
         marker::cut_line_comment,
         word::has_word,
     },
-    rules_simple::is_real_cfg_line,
+    rules_simple::cfg_test::is_real_cfg_line,
 };
 
 /// Brace-scan state carried across lines for multi-line literals.

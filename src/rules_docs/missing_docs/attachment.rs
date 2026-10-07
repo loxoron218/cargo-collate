@@ -2,7 +2,7 @@
 
 use crate::{
     lexer::{literal::strip_strings, marker::is_doc_line, word::has_word},
-    rules_simple::is_real_cfg_line,
+    rules_simple::cfg_test::is_real_cfg_line,
     rules_tests::{range::code_of, test_docs::attached_above},
 };
 

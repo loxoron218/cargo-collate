@@ -43,14 +43,15 @@ use {
     rules_paths::{enum_variants, prelude::prelude_groups, qualified_paths},
     rules_self_import::self_imports,
     rules_simple::{
+        comment_lines::line_comments,
         dependencies::default_features_hits,
         expect::expect_hits,
         hygiene::{
-            doc_blank_hits, dot_ok_hits, low_log_hits, parent_hits, path_include_hits,
-            scoped_pub_hits, split_mod_doc_hits,
+            doc_blank::doc_blank_hits, dot_ok::dot_ok_hits, low_log::low_log_hits,
+            parent_path::parent_hits, path_include::path_include_hits, scoped_pub::scoped_pub_hits,
+            split_mod_doc::split_mod_doc_hits,
         },
         layout::{deep_nesting, long_files},
-        line_comments,
         manifest::stray_mod_rs,
         naming::{collision::duplicate_stems, grouping::generic_dirs},
         sync::{hits::std_sync_hits, thread_hits::thread_unsafe_hits},

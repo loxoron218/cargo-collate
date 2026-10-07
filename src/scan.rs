@@ -54,6 +54,35 @@ pub fn indexed_lines(file: &SourceFile) -> impl Iterator<Item = (usize, (&String
     file.lines.iter().zip(file.stripped.iter()).enumerate()
 }
 
+/// Collect `path:line:content` hits for lines matching `matches`.
+///
+/// Centralizes the files-then-lines fan-out so detectors share one
+/// iterator shape instead of repeating it.
+///
+/// # Arguments
+///
+/// * `files` - Scanned source files with original and blanked lines.
+/// * `matches` - True for a hit given its file, zero-based index, original line, and blanked code
+///   line.
+///
+/// # Returns
+///
+/// * `Vec<String>` - Hit lines.
+#[must_use]
+pub fn collect_line_hits(
+    files: &[SourceFile],
+    matches: impl Fn(&SourceFile, usize, &str, &str) -> bool,
+) -> Vec<String> {
+    files
+        .iter()
+        .flat_map(|file| {
+            indexed_lines(file)
+                .filter(|(idx, (line, code))| matches(file, *idx, line, code))
+                .map(|(idx, (line, _))| format!("{}:{}:{line}", file.path, idx.saturating_add(1)))
+        })
+        .collect()
+}
+
 /// True if `cmd` resolves in `PATH`.
 #[must_use]
 pub fn have(cmd: &str) -> bool {

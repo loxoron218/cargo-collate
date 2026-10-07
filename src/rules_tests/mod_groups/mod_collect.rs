@@ -5,7 +5,7 @@
 
 use crate::{
     lexer::word::has_word,
-    rules_simple::is_real_cfg_line,
+    rules_simple::cfg_test::is_real_cfg_line,
     rules_tests::{
         mod_groups::{
             CFG_TEST_GROUP, MACRO_USE_GROUP, ORDINARY_GROUP,

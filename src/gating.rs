@@ -3,7 +3,8 @@
 use std::{collections::HashSet, hash::BuildHasher};
 
 use crate::{
-    lexer::visibility::match_file_mod_decl, rules_simple::is_real_cfg_line, scan::SourceFile,
+    lexer::visibility::match_file_mod_decl, rules_simple::cfg_test::is_real_cfg_line,
+    scan::SourceFile,
 };
 
 /// Module stem declared within three lines after a cfg-test marker at `i`.

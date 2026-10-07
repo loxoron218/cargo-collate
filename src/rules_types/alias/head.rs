@@ -3,7 +3,7 @@
 //! Validates the `Name<params?> =` head of a candidate alias, so prose,
 //! match arms, and item bodies never resolve into a declaration.
 
-use crate::rules_simple::skip_ws_at;
+use crate::rules_simple::cfg_test::skip_ws_at;
 
 /// A declared generic parameter with its optional default.
 #[derive(Debug, Clone, PartialEq, Eq)]

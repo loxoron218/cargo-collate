@@ -11,7 +11,7 @@ use crate::{
         visibility::{find_mod_semi, strip_pub_block},
         word::has_word,
     },
-    rules_simple::is_real_cfg_line,
+    rules_simple::cfg_test::is_real_cfg_line,
     rules_tests::{
         order::strip_attrs,
         range::{anyhow_gap, code_of, in_ranges, test_ranges},
