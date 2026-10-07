@@ -269,7 +269,8 @@ fn check_layout_rules(output: &mut String, dirs: &[String], files: &[SourceFile]
     let mut fail = false;
     fail |= show(
         output,
-        "Source files over limit; split into smaller modules.",
+        "Source files over limit (400 lines); trim unnecessary lines first, split into smaller \
+         modules when no longer possible.",
         &long_files(files),
     );
     fail |= show(

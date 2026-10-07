@@ -38,7 +38,7 @@ workspace scope is the shared git toplevel.
 | `generic_dirs` | Generic module directories; group by capability/domain instead. |
 | `inner_test_gates` | Inner cfg-test gates; use cfg(test) mod tests instead. |
 | `line_comments` | Remove all line comments. |
-| `long_files` | Source files over limit (400 lines); split into smaller modules. |
+| `long_files` | Source files over limit (400 lines); trim unnecessary lines first, split into smaller modules when no longer possible. |
 | `low_log_hits` | Low-level logging; use `info`, `warn`, or `error` for significant events. |
 | `missing_context` | Bare `?` without context, including inline anyhow! errors; use `.context()` or `.with_context()`. |
 | `missing_fn_docs` | Functions without attached docs; every fn outside test code needs `///`, std methods exempt. Complements `clippy::missing_docs_in_private_items`. |

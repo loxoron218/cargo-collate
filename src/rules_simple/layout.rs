@@ -1,10 +1,11 @@
-//! Module-depth checks for shallow nesting.
+//! Module-depth and file-length checks for shallow, short modules.
 //!
 //! `CODING_STANDARDS.md` caps the sub-folder depth below a scan leaf at two
-//! (such as `src/ui/gallery/`), so deeper trees stay flagged. Paths outside
-//! the classic leaves measure from their first folder instead, so every
-//! scanned `.rs` file counts, including `docs/`, `fuzz/`, `examples/`, and
-//! other non-standard roots.
+//! (such as `src/ui/gallery/`), so deeper trees stay flagged, and caps each
+//! `.rs` file at 400 lines, so longer files stay flagged. Paths outside the
+//! classic leaves measure from their first folder instead, so every scanned
+//! `.rs` file counts, including `docs/`, `fuzz/`, `examples/`, and other
+//! non-standard roots.
 
 use crate::scan::SourceFile;
 
@@ -19,6 +20,9 @@ const SCAN_LEAVES: [&str; 3] = ["src", "tests", "benches"];
 
 /// Maximum sub-folder depth below a scan leaf, per `CODING_STANDARDS.md`.
 pub const MAX_FOLDER_DEPTH: usize = 2;
+
+/// Maximum lines per source file, per `CODING_STANDARDS.md`.
+pub const MAX_FILE_LINES: usize = 400;
 
 /// Remainder of `path` below its outermost scan leaf, if any.
 ///
@@ -104,23 +108,64 @@ pub fn deep_nesting(rs_files: &[String]) -> Vec<String> {
     hits
 }
 
-/// Source files over the line limit.
+/// Source files over the line limit, one hit per file.
+///
+/// Trim unnecessary lines first; split into smaller modules only when
+/// trimming is no longer possible.
 #[must_use]
 pub fn long_files(files: &[SourceFile]) -> Vec<String> {
     files
         .iter()
-        .filter(|f| f.lines.len() > 400)
-        .map(|f| format!("{}: {} lines", f.path, f.lines.len()))
+        .filter(|f| f.lines.len() > MAX_FILE_LINES)
+        .map(|f| {
+            format!(
+                "{}: {} lines (max {MAX_FILE_LINES}); trim unnecessary lines first, split into \
+                 smaller modules when no longer possible",
+                f.path,
+                f.lines.len()
+            )
+        })
         .collect()
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::rules_simple::layout::{MAX_FOLDER_DEPTH, deep_nesting, depth_below_leaf};
+    use crate::{
+        rules_simple::layout::{
+            MAX_FILE_LINES, MAX_FOLDER_DEPTH, deep_nesting, depth_below_leaf, long_files,
+        },
+        scan::support::test_file,
+    };
 
     #[test]
     fn depth_limit_matches_standard() {
         assert_eq!(MAX_FOLDER_DEPTH, 2);
+    }
+
+    #[test]
+    fn file_limit_matches_standard() {
+        assert_eq!(MAX_FILE_LINES, 400);
+    }
+
+    #[test]
+    fn long_files_recommends_trim_then_split() {
+        let at_limit = vec![test_file("src/a.rs", &vec!["fn f() {}"; MAX_FILE_LINES])];
+        assert!(
+            long_files(&at_limit).is_empty(),
+            "files at the limit stay silent"
+        );
+        let over = vec![test_file(
+            "src/a.rs",
+            &vec!["fn f() {}"; MAX_FILE_LINES.saturating_add(1)],
+        )];
+        assert_eq!(
+            long_files(&over),
+            vec![
+                "src/a.rs: 401 lines (max 400); trim unnecessary lines first, split into smaller \
+                 modules when no longer possible"
+                    .to_owned()
+            ]
+        );
     }
 
     #[test]
