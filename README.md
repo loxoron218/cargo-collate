@@ -31,7 +31,7 @@ workspace scope is the shared git toplevel.
 | `deep_nesting` | Module nesting over the depth limit; keep module nesting shallow (max 2). |
 | `doc_blank_hits` | Doc comments without a preceding blank line; separate `///` blocks with an empty line. |
 | `dot_ok_hits` | Dot-ok error swallows; propagate errors with context instead. |
-| `duplicate_stems` | Duplicate module stems; keep every word of file names unique codebase-wide. |
+| `duplicate_stems` | Duplicate module stems; keep every file name unique codebase-wide. |
 | `enum_variants` | Enum variants at call sites; import variants via nested `use` instead. |
 | `expect_hits` | Expect attributes; fix lints instead of suppressing them. |
 | `first_occurrence_alias` | Import alias on first occurrence; keep the first import plain and alias subsequent colliding imports instead. |

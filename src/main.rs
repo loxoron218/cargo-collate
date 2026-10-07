@@ -291,7 +291,7 @@ fn check_layout_rules(output: &mut String, dirs: &[String], files: &[SourceFile]
     );
     fail |= show(
         output,
-        "Duplicate module stems; keep every word of file names unique codebase-wide.",
+        "Duplicate module stems; keep every file name unique codebase-wide.",
         &duplicate_stems(&rg_files(dirs)),
     );
     fail |= show(
