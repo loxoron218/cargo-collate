@@ -63,7 +63,7 @@ use {
     rules_types::unnecessary_types,
     rules_ui::{
         builder_pattern::builder_pattern_hits, missing_labels::missing_labels_hits,
-        ui_files::ui_file_hits,
+        missing_underline::missing_underline_hits, ui_files::ui_file_hits,
     },
     scan::{
         SourceFile, discover_roots, have, load_files, load_manifests, rg_files, rg_manifests,
@@ -339,6 +339,12 @@ fn check_ui_rules(output: &mut String, dirs: &[String], files: &[SourceFile]) ->
         "Widget builders without accessibility labels; call update_property with an \
          import-resolved label alias in the same fn.",
         &missing_labels_hits(files),
+    );
+    fail |= show(
+        output,
+        "Mnemonic `_X` label text without underline enablement; add use_underline(true) to the \
+         builder or set_use_underline(true) in the same fn.",
+        &missing_underline_hits(files),
     );
     fail
 }
