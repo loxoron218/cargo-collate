@@ -6,6 +6,7 @@
 
 use crate::{
     lexer::literal::stripped_lines,
+    rules_ui::builder_pattern::roots::import_roots,
     scan::{ManifestFile, SourceFile, discover_roots, scope_for},
 };
 
@@ -23,11 +24,13 @@ pub fn test_manifest(path: &str, lines: &[&str]) -> ManifestFile {
 pub fn test_file(path: &str, lines: &[&str]) -> SourceFile {
     let owned: Vec<String> = lines.iter().map(|s| (*s).to_owned()).collect();
     let stripped = stripped_lines(&owned);
+    let roots = import_roots(&owned);
     SourceFile {
         path: path.to_owned(),
         ws: String::new(),
         lines: owned,
         stripped,
+        roots,
     }
 }
 

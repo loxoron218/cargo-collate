@@ -34,7 +34,8 @@ pub const fn is_ident_byte(byte: u8) -> bool {
 /// # Returns
 ///
 /// * `bool` - True on a bounded marker match.
-fn is_builder_open_at(bytes: &[u8], pos: usize) -> bool {
+#[must_use]
+pub fn is_builder_open_at(bytes: &[u8], pos: usize) -> bool {
     bytes
         .get(pos..pos.saturating_add("::builder".len()))
         .is_some_and(|window| window == b"::builder")
@@ -53,7 +54,8 @@ fn is_builder_open_at(bytes: &[u8], pos: usize) -> bool {
 /// # Returns
 ///
 /// * `Option<&str>` - Basename such as `Button` in `gtk::Button::builder`.
-fn builder_type_at(body: &str, pos: usize) -> Option<&str> {
+#[must_use]
+pub fn builder_type_at(body: &str, pos: usize) -> Option<&str> {
     let bytes = body.as_bytes();
     let mut start = pos;
     while start > 0
@@ -124,7 +126,8 @@ fn is_label_name_at(bytes: &[u8], idx: usize, name: &[u8]) -> bool {
 /// # Returns
 ///
 /// * `usize` - Resume index at the first non-gap byte.
-fn cursor_after_gap(bytes: &[u8], start: usize) -> usize {
+#[must_use]
+pub fn cursor_after_gap(bytes: &[u8], start: usize) -> usize {
     let mut cursor = start;
     while bytes
         .get(cursor)

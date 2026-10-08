@@ -61,7 +61,10 @@ use {
     },
     rules_tests::{check_test_rules, test_docs::unnecessary_test_docs},
     rules_types::unnecessary_types,
-    rules_ui::{missing_labels::missing_labels_hits, ui_files::ui_file_hits},
+    rules_ui::{
+        builder_pattern::builder_pattern_hits, missing_labels::missing_labels_hits,
+        ui_files::ui_file_hits,
+    },
     scan::{
         SourceFile, discover_roots, have, load_files, load_manifests, rg_files, rg_manifests,
         rg_search, rg_ui_files,
@@ -324,6 +327,12 @@ fn check_ui_rules(output: &mut String, dirs: &[String], files: &[SourceFile]) ->
         "Declarative UI/CSS files or string-literal references; build widgets programmatically \
          with css_classes instead.",
         &ui_file_hits(files, &rg_ui_files(dirs)),
+    );
+    fail |= show(
+        output,
+        "Widget builders without `css_classes`, `tooltip_text`, and `can_focus`; direct \
+         construction or post-build setters; use the builder pattern instead.",
+        &builder_pattern_hits(files),
     );
     fail |= show(
         output,
