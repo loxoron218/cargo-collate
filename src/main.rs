@@ -22,6 +22,7 @@ pub mod rules_self_import;
 pub mod rules_simple;
 pub mod rules_tests;
 pub mod rules_types;
+pub mod rules_ui;
 pub mod scan;
 
 use std::{
@@ -60,9 +61,10 @@ use {
     },
     rules_tests::{check_test_rules, test_docs::unnecessary_test_docs},
     rules_types::unnecessary_types,
+    rules_ui::ui_files::ui_file_hits,
     scan::{
         SourceFile, discover_roots, have, load_files, load_manifests, rg_files, rg_manifests,
-        rg_search,
+        rg_search, rg_ui_files,
     },
 };
 
@@ -90,6 +92,7 @@ fn run() -> i32 {
     fail |= check_test_rules(&mut output, &files);
     fail |= check_doc_rules(&mut output, &files);
     fail |= check_layout_rules(&mut output, &dirs, &files);
+    fail |= check_ui_rules(&mut output, &dirs, &files);
 
     let mut handle = stdout().lock();
     if write!(handle, "{output}").is_err() {
@@ -311,6 +314,16 @@ fn check_layout_rules(output: &mut String, dirs: &[String], files: &[SourceFile]
         fail |= clones.is_empty();
     }
     fail
+}
+
+/// Declarative UI and CSS rules.
+fn check_ui_rules(output: &mut String, dirs: &[String], files: &[SourceFile]) -> bool {
+    show(
+        output,
+        "Declarative UI/CSS files or string-literal references; build widgets programmatically \
+         with css_classes instead.",
+        &ui_file_hits(files, &rg_ui_files(dirs)),
+    )
 }
 
 fn main() -> ExitCode {

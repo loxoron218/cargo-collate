@@ -190,9 +190,39 @@ fn rg_listed(glob: &str, dirs: &[String]) -> Vec<String> {
 }
 
 /// `rg` source listing for `dirs`.
+///
+/// # Arguments
+///
+/// * `dirs` - Scan roots to enumerate.
+///
+/// # Returns
+///
+/// * `Vec<String>` - Rust source paths.
 #[must_use]
 pub fn rg_files(dirs: &[String]) -> Vec<String> {
     rg_listed("*.rs", dirs)
+}
+
+/// `rg` declarative UI/CSS listing for `dirs`.
+///
+/// Covers declarative suffixes so programmatic-widget rules see every stray
+/// file without extra subprocesses. Suffixes stay split from their glob dot
+/// so this discovery code never reads as a reference itself.
+///
+/// # Arguments
+///
+/// * `dirs` - Scan roots to enumerate.
+///
+/// # Returns
+///
+/// * `Vec<String>` - Declarative UI/CSS paths.
+#[must_use]
+pub fn rg_ui_files(dirs: &[String]) -> Vec<String> {
+    let mut out = Vec::new();
+    for ext in ["ui", "blp", "xml", "css"] {
+        out.extend(rg_listed(&format!("*.{ext}"), dirs));
+    }
+    out
 }
 
 /// `rg -n` search with literal (`-F`) or PCRE (`-P`) pattern.

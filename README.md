@@ -17,7 +17,8 @@ cargo collate
 No arguments. Exits `0` when clean, `1` on findings, `2` on usage / environment errors.
 
 Scans every `*.rs` file under `.` via `rg --files` (`target/` and `vendor/` excluded), so
-workspace-excluded crates stay visible. Package dirs resolve via the nearest ancestor `Cargo.toml`;
+workspace-excluded crates stay visible. Declarative `*.ui`, `*.blp`, `*.xml`, and `*.css` files
+resolve through the same listing. Package dirs resolve via the nearest ancestor `Cargo.toml`;
 workspace scope is the shared git toplevel.
 
 ## Lints
@@ -69,3 +70,4 @@ workspace scope is the shared git toplevel.
 | `unnecessary_test_docs` | Comments on private test-module functions; shared pub helpers stay documented. |
 | `unnecessary_types` | Unnecessary type definitions; aliases removable warning-free at every use site never require them. Complements `clippy::type_complexity`. |
 | `unstructured_tracing` | Unstructured tracing; use fields for structured data, never interpolated strings. |
+| `ui_file_hits` | Declarative UI/CSS files or string-literal references; build widgets programmatically with `css_classes` instead. |

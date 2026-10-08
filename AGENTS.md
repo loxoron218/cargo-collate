@@ -43,6 +43,7 @@ text per lint.
   `missing_context`, `mixed_mod_groups`, `module_order`, `stray_test_comments`,
   `ungated_test_modules` (`multi_cfg_files` is wired here but implemented in `rules_simple`)
 - `src/rules_types.rs` + `src/rules_types/` — `unnecessary_types`
+- `src/rules_ui.rs` + `src/rules_ui/` — `ui_file_hits`
 
 ## Conventions & workflow
 
