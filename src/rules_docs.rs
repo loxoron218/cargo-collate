@@ -7,6 +7,7 @@ pub mod item_args;
 pub mod keywords;
 pub mod missing_docs;
 pub mod must_use;
+pub mod pub_mod_inner;
 pub mod sections;
 
 use std::collections::BTreeSet;
@@ -267,11 +268,8 @@ mod tests {
                 &["let s = \"#[must_use]\";", "fn f() -> bool { true }"],
             ),
         ];
-        assert_eq!(
-            unnecessary_must_use(&files).len(),
-            2,
-            "unit and private flag"
-        );
+        let hits = unnecessary_must_use(&files);
+        assert_eq!(hits.len(), 2, "unit and private flag");
     }
 
     #[test]

@@ -38,6 +38,7 @@ use {
     rules_docs::{
         missing_docs::{doc_header::missing_mod_docs, missing_fn_docs},
         must_use::unnecessary_must_use,
+        pub_mod_inner::pub_mod_inner_docs,
         sections::{unnecessary_errors, unnecessary_panics},
     },
     rules_imports::{mixed_import_groups, stray::stray_uses},
@@ -240,6 +241,11 @@ fn check_doc_rules(output: &mut String, files: &[SourceFile]) -> bool {
         output,
         "Files without leading module docs; every file needs a //! line on line 1.",
         &missing_mod_docs(files),
+    );
+    fail |= show(
+        output,
+        "Public modules with inner //! docs; move to /// above attributes.",
+        &pub_mod_inner_docs(files),
     );
     fail |= show(
         output,

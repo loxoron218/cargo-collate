@@ -55,6 +55,7 @@ workspace scope is the shared git toplevel.
 | `parent_hits` | Parent-module paths; prefer crate-relative imports. |
 | `path_include_hits` | Path attributes and include macros; use standard module declarations instead. |
 | `prelude_groups` | Prelude imports inside gtk family groups; use libadwaita prelude instead. |
+| `pub_mod_inner_docs` | Public inline modules with leading inner `//!` docs; move to `///` above attributes. |
 | `qualified_paths` | Qualified call sites; import via `use` instead with constructors exempt. |
 | `scoped_pub_hits` | Scoped pub visibility; keep visibility explicit and consistent. |
 | `split_mod_doc_hits` | Split module docs; keep `//!` blocks contiguous with `//!` separators, never empty lines. |
