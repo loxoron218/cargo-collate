@@ -46,7 +46,8 @@ fn missing_props(segment: &str) -> Vec<&str> {
 /// Index of the `.build(` terminating the chain at `from`, if any.
 ///
 /// Stops on `;` or a new `::builder` first, so stored intermediates and
-/// consecutive chains never pair across statements.
+/// consecutive chains never pair across statements. Shared with
+/// default-class checks so both directions read one chain boundary.
 ///
 /// # Arguments
 ///
@@ -56,7 +57,8 @@ fn missing_props(segment: &str) -> Vec<&str> {
 /// # Returns
 ///
 /// * `Option<usize>` - Byte index of the terminating dot, if it closes here.
-fn chain_build_at(body: &str, from: usize) -> Option<usize> {
+#[must_use]
+pub fn chain_build_at(body: &str, from: usize) -> Option<usize> {
     let bytes = body.as_bytes();
     let limit = from.saturating_add(CHAIN_SCAN_LIMIT);
     let mut idx = from.saturating_add("::builder".len());

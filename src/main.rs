@@ -63,8 +63,9 @@ use {
     rules_tests::{check_test_rules, test_docs::unnecessary_test_docs},
     rules_types::unnecessary_types,
     rules_ui::{
-        builder_pattern::builder_pattern_hits, missing_labels::missing_labels_hits,
-        missing_underline::missing_underline_hits, ui_files::ui_file_hits,
+        builder_pattern::builder_pattern_hits, missing_css_classes::missing_css_classes_hits,
+        missing_labels::missing_labels_hits, missing_underline::missing_underline_hits,
+        ui_files::ui_file_hits,
     },
     scan::{
         SourceFile, discover_roots, have, load_files, load_manifests, rg_files, rg_manifests,
@@ -346,6 +347,12 @@ fn check_ui_rules(output: &mut String, dirs: &[String], files: &[SourceFile]) ->
         "Widget builders without accessibility labels; call update_property with an \
          import-resolved label alias in the same fn.",
         &missing_labels_hits(files),
+    );
+    fail |= show(
+        output,
+        "Widget builders dropping required default CSS classes; keep auto image-button, \
+         text-button, toggle, and their kin in css_classes or use add_css_class after build.",
+        &missing_css_classes_hits(files),
     );
     fail |= show(
         output,
