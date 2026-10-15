@@ -123,6 +123,31 @@ pub fn has_method_call(segment: &str, name: &str) -> bool {
     false
 }
 
+/// Method name after the dot at `dot`, if any.
+///
+/// Shares one spelling of dotted-call parsing between setter scans, so
+/// direct and redundant detectors never clone each other.
+///
+/// # Arguments
+///
+/// * `body` - Joined code text with strings blanked and tails cut.
+/// * `dot` - Byte index of the candidate `.`.
+///
+/// # Returns
+///
+/// * `Option<(&str, usize)>` - Method name and exclusive end index.
+#[must_use]
+pub fn dotted_name_at(body: &str, dot: usize) -> Option<(&str, usize)> {
+    let bytes = body.as_bytes();
+    if bytes.get(dot) != Some(&b'.') {
+        return None;
+    }
+    let name_start = dot.saturating_add(1);
+    let name_end = ident_end_after(bytes, name_start)?;
+    let name = body.get(name_start..name_end)?;
+    Some((name, name_end))
+}
+
 /// Start index of the identifier ending at `end`, if any.
 ///
 /// # Arguments

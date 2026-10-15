@@ -1,9 +1,10 @@
 //! Incomplete builder-chain detectors for widget styling properties.
 //!
 //! Flags inventoried widget `Type::builder()` chains that reach `.build(`
-//! without `.css_classes(`, `.tooltip_text(`, or `.can_focus(`, so every
-//! programmatic widget keeps its styling, tooltip, and focus behavior inside
-//! the builder.
+//! without `.css_classes(` or `.tooltip_text(`, so every
+//! programmatic widget keeps its styling and tooltip inside
+//! the builder. Focus stays out: explicit `.can_focus(true)` restates the
+//! default and flags separately as redundant.
 
 use crate::{
     rules_ui::{
@@ -17,7 +18,7 @@ use crate::{
 };
 
 /// Builder properties required on every widget chain.
-const REQUIRED_PROPS: [&str; 3] = ["css_classes", "tooltip_text", "can_focus"];
+const REQUIRED_PROPS: [&str; 2] = ["css_classes", "tooltip_text"];
 
 /// Maximum bytes from `::builder` to its `.build(` terminator.
 ///
@@ -172,8 +173,8 @@ mod tests {
         assert!(
             hits.first().is_some_and(|hit| hit.contains("css_classes")
                 && hit.contains("tooltip_text")
-                && hit.contains("can_focus")),
-            "hint names every missing property"
+                && !hit.contains("can_focus")),
+            "hint names the styling properties only"
         );
     }
 
@@ -210,7 +211,6 @@ mod tests {
                 "    let btn = Button::builder()",
                 "        .css_classes([\"circular\"])",
                 "        .tooltip_text(\"Select\")",
-                "        .can_focus(true)",
                 "        .build();",
                 "    btn",
                 "}",

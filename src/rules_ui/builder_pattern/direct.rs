@@ -2,9 +2,11 @@
 //!
 //! Flags inventoried widget `Type::new(`-style calls and
 //! `.set_css_classes(`-style post-build setters, so widgets route through
-//! builders carrying `css_classes`, `tooltip_text`, and `can_focus` instead.
+//! builders carrying `css_classes` and `tooltip_text` instead.
 //! Builderless widgets route to `glib::Object::builder::<T>()` instead.
-//! `set_focusable` counts as the `can_focus` setter spelling.
+//! `set_focusable` counts as the `can_focus` setter spelling. Literal
+//! `set_can_focus(true)` stays silent here since the redundant-focus check
+//! owns it.
 
 use std::collections::BTreeMap;
 
@@ -14,6 +16,7 @@ use crate::{
             box_shape::is_gtk_box_new,
             file_scan_hits,
             roots::{is_std_root, widget_name},
+            setters::setter_call_at,
             trigger::{ident_end_after, ident_start_before, is_ctor_name},
         },
         missing_labels::{
@@ -22,14 +25,6 @@ use crate::{
     },
     scan::SourceFile,
 };
-
-/// Post-build setters with the builder property they belong to.
-const SETTER_PROPS: [(&str, &str); 4] = [
-    ("set_css_classes", "css_classes"),
-    ("set_tooltip_text", "tooltip_text"),
-    ("set_can_focus", "can_focus"),
-    ("set_focusable", "can_focus"),
-];
 
 /// Widget basename and call name at `sep`, if directly constructed.
 ///
@@ -82,35 +77,6 @@ fn direct_call_at(
     Some((base.to_owned(), widget))
 }
 
-/// Setter name and its builder property at `dot`, if any.
-///
-/// # Arguments
-///
-/// * `body` - Joined code text with strings blanked and tails cut.
-/// * `dot` - Byte index of the candidate `.`.
-///
-/// # Returns
-///
-/// * `Option<(&str, &str)>` - Setter name and builder property on matches.
-fn setter_call_at(body: &str, dot: usize) -> Option<(&str, &str)> {
-    let bytes = body.as_bytes();
-    if bytes.get(dot) != Some(&b'.') {
-        return None;
-    }
-    let name_start = dot.saturating_add(1);
-    let name_end = ident_end_after(bytes, name_start)?;
-    let name = body.get(name_start..name_end)?;
-    let prop = SETTER_PROPS
-        .iter()
-        .find(|(setter, _)| *setter == name)
-        .map(|(_, prop)| *prop)?;
-    let open = cursor_after_gap(bytes, name_end);
-    if bytes.get(open) != Some(&b'(') {
-        return None;
-    }
-    Some((name, prop))
-}
-
 /// Finding for direct or setter calls opening at `idx`, if any.
 ///
 /// # Arguments
@@ -137,12 +103,12 @@ fn direct_hit_at(file: &SourceFile, text: &str, idx: usize, lineno: usize) -> Op
             ));
         }
         return Some(format!(
-            "{}:{lineno}:{line} help: use {base}::builder() with .css_classes(...), \
-             .tooltip_text(...), and .can_focus(...) instead",
+            "{}:{lineno}:{line} help: use {base}::builder() with .css_classes(...) and \
+             .tooltip_text(...) instead",
             file.path
         ));
     }
-    if let Some((_, prop)) = setter_call_at(text, idx) {
+    if let Some((_, prop, _)) = setter_call_at(text, idx) {
         let line = file
             .lines
             .get(lineno.saturating_sub(1))
@@ -234,7 +200,7 @@ mod tests {
                 "fn f() {",
                 "    btn.set_css_classes(&[]);",
                 "    btn.set_tooltip_text(\"x\");",
-                "    btn.set_can_focus(true);",
+                "    btn.set_can_focus(false);",
                 "    btn.set_focusable(true);",
                 "}",
             ],
@@ -244,6 +210,23 @@ mod tests {
         assert!(
             hits.iter().all(|hit| hit.contains("into the builder")),
             "every hint routes into the builder"
+        );
+    }
+
+    #[test]
+    fn redundant_true_stays_silent() {
+        let files = vec![test_file(
+            "src/a.rs",
+            &[
+                "use gtk::Button;",
+                "fn f(btn: &Button) {",
+                "    btn.set_can_focus(true);",
+                "}",
+            ],
+        )];
+        assert!(
+            direct_hits(&files).is_empty(),
+            "redundant true belongs to the redundant-focus check"
         );
     }
 

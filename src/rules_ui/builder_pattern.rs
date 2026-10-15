@@ -3,7 +3,9 @@
 //! Parent index for the capability. The `box_shape` submodule counts call
 //! arguments, the `chain` submodule flags inventoried widget builders
 //! missing styling calls, `direct` flags direct construction and post-build
-//! setters, `trigger` holds call-boundary matching, `roots` holds
+//! setters, `redundant` flags explicit focus restatements, `setters` holds
+//! setter-call matching, `trigger` holds
+//! call-boundary matching, `roots` holds
 //! import-root resolution, and shared text scanning lives here so both
 //! directions read identical analysis text. Only gtk-family files scan:
 //! same-named foreign types stay silent. Nothing else stays exempt: test code
@@ -12,12 +14,16 @@
 pub mod box_shape;
 pub mod chain;
 pub mod direct;
+pub mod redundant;
 pub mod roots;
+pub mod setters;
 pub mod trigger;
 
 use crate::{
     lexer::{marker::cut_line_comment, word::has_word},
-    rules_ui::builder_pattern::{chain::chain_hits, direct::direct_hits},
+    rules_ui::builder_pattern::{
+        chain::chain_hits, direct::direct_hits, redundant::redundant_focus_hits,
+    },
     scan::SourceFile,
 };
 
@@ -110,7 +116,8 @@ pub fn file_scan_hits(
 
 /// Builder-pattern findings across files.
 ///
-/// Merges incomplete chains with direct construction and setter hits, sorted
+/// Merges incomplete chains with redundant focus calls plus direct
+/// construction and setter hits, sorted
 /// and deduplicated so overlapping triggers report once.
 ///
 /// # Arguments
@@ -123,6 +130,7 @@ pub fn file_scan_hits(
 #[must_use]
 pub fn builder_pattern_hits(files: &[SourceFile]) -> Vec<String> {
     let mut hits = chain_hits(files);
+    hits.extend(redundant_focus_hits(files));
     hits.extend(direct_hits(files));
     hits.sort();
     hits.dedup();
@@ -143,7 +151,6 @@ mod tests {
                 "    let btn = Button::builder()",
                 "        .css_classes([\"circular\"])",
                 "        .tooltip_text(\"Select item\")",
-                "        .can_focus(true)",
                 "        .build();",
                 "    btn.update_property(&[Label(\"Select item\")]);",
                 "    btn",
