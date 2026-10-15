@@ -173,7 +173,10 @@ fn gaps_only(bytes: &[u8], from: usize, to: usize) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::rules_ui::builder_pattern::box_shape::is_gtk_box_new;
+    use crate::{
+        rules_ui::builder_pattern::{box_shape::is_gtk_box_new, direct::direct_hits},
+        scan::support::test_file,
+    };
 
     #[test]
     fn boxed_shapes_split() {
@@ -200,5 +203,46 @@ mod tests {
         ] {
             assert!(!is_gtk_box_new(body, 8), "{body} stays silent");
         }
+    }
+
+    #[test]
+    fn boxed_direct_hits_split() {
+        let gtk_box = vec![test_file(
+            "src/a.rs",
+            &[
+                "use gtk::{Box, Orientation::Vertical};",
+                "fn f() {",
+                "    let b = Box::new(Vertical, 6);",
+                "    let c = Box::new(gtk::Orientation::Horizontal, 12);",
+                "}",
+            ],
+        )];
+        assert_eq!(direct_hits(&gtk_box).len(), 2, "orientation shapes flag");
+        let std_box = vec![
+            test_file(
+                "src/b.rs",
+                &[
+                    "use gtk::Box;",
+                    "fn f() {",
+                    "    let b = Box::new(value);",
+                    "    let p = Box::pin(work());",
+                    "}",
+                ],
+            ),
+            test_file(
+                "src/c.rs",
+                &[
+                    "use gtk::Box;",
+                    "fn f() {",
+                    "    let b = Box::new(move |_| handle());",
+                    "    let d: Box<dyn Ink> = Box::default();",
+                    "}",
+                ],
+            ),
+        ];
+        assert!(
+            direct_hits(&std_box).is_empty(),
+            "single-value shapes stay silent"
+        );
     }
 }

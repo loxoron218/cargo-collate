@@ -251,6 +251,25 @@ mod tests {
     }
 
     #[test]
+    fn generic_object_builders_stay_silent() {
+        let files = vec![test_file(
+            "src/a.rs",
+            &[
+                "use gtk::Button;",
+                "fn f() {",
+                "    let overlay = glib::Object::builder::<ToastOverlay>()",
+                "        .property(\"child\", &content)",
+                "        .build();",
+                "}",
+            ],
+        )];
+        assert!(
+            chain_hits(&files).is_empty(),
+            "property-based generic builders stay silent"
+        );
+    }
+
+    #[test]
     fn lookalikes_stay_silent() {
         let files = vec![
             test_file(

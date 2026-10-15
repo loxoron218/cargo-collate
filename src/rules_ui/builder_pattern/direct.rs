@@ -3,6 +3,7 @@
 //! Flags inventoried widget `Type::new(`-style calls and
 //! `.set_css_classes(`-style post-build setters, so widgets route through
 //! builders carrying `css_classes`, `tooltip_text`, and `can_focus` instead.
+//! Builderless widgets route to `glib::Object::builder::<T>()` instead.
 //! `set_focusable` counts as the `can_focus` setter spelling.
 
 use std::collections::BTreeMap;
@@ -15,7 +16,9 @@ use crate::{
             roots::{is_std_root, widget_name},
             trigger::{ident_end_after, ident_start_before, is_ctor_name},
         },
-        missing_labels::labels_trigger::cursor_after_gap,
+        missing_labels::{
+            labels_trigger::cursor_after_gap, widget_builders::is_builderless_widget,
+        },
     },
     scan::SourceFile,
 };
@@ -121,11 +124,18 @@ fn setter_call_at(body: &str, dot: usize) -> Option<(&str, &str)> {
 ///
 /// * `Option<String>` - Hit line with a fix hint on direct calls.
 fn direct_hit_at(file: &SourceFile, text: &str, idx: usize, lineno: usize) -> Option<String> {
-    if let Some((base, _)) = direct_call_at(text, idx, &file.roots) {
+    if let Some((base, widget)) = direct_call_at(text, idx, &file.roots) {
         let line = file
             .lines
             .get(lineno.saturating_sub(1))
             .map_or("", String::as_str);
+        if is_builderless_widget(&widget) {
+            return Some(format!(
+                "{}:{lineno}:{line} help: no {widget}::builder() in libadwaita 0.9.2; use \
+                 glib::Object::builder::<{widget}>() with .property(...) instead",
+                file.path
+            ));
+        }
         return Some(format!(
             "{}:{lineno}:{line} help: use {base}::builder() with .css_classes(...), \
              .tooltip_text(...), and .can_focus(...) instead",
@@ -193,47 +203,6 @@ mod tests {
         assert!(
             hits.iter().all(|hit| hit.contains("builder()")),
             "every hint routes to the builder"
-        );
-    }
-
-    #[test]
-    fn boxed_shapes_split() {
-        let gtk_box = vec![test_file(
-            "src/a.rs",
-            &[
-                "use gtk::{Box, Orientation::Vertical};",
-                "fn f() {",
-                "    let b = Box::new(Vertical, 6);",
-                "    let c = Box::new(gtk::Orientation::Horizontal, 12);",
-                "}",
-            ],
-        )];
-        assert_eq!(direct_hits(&gtk_box).len(), 2, "orientation shapes flag");
-        let std_box = vec![
-            test_file(
-                "src/b.rs",
-                &[
-                    "use gtk::Box;",
-                    "fn f() {",
-                    "    let b = Box::new(value);",
-                    "    let p = Box::pin(work());",
-                    "}",
-                ],
-            ),
-            test_file(
-                "src/c.rs",
-                &[
-                    "use gtk::Box;",
-                    "fn f() {",
-                    "    let b = Box::new(move |_| handle());",
-                    "    let d: Box<dyn Ink> = Box::default();",
-                    "}",
-                ],
-            ),
-        ];
-        assert!(
-            direct_hits(&std_box).is_empty(),
-            "single-value shapes stay silent"
         );
     }
 
@@ -395,6 +364,28 @@ mod tests {
         assert!(
             direct_hits(&foreign).is_empty(),
             "foreign aliases stay silent"
+        );
+    }
+
+    #[test]
+    fn builderless_widgets_flag_object_hint() {
+        let files = vec![test_file(
+            "src/a.rs",
+            &[
+                "use gtk::Button;",
+                "use libadwaita::ToastOverlay as ToastWidget;",
+                "fn f() {",
+                "    let a = ToastOverlay::new();",
+                "    let b = ToastWidget::new();",
+                "}",
+            ],
+        )];
+        let hits = direct_hits(&files);
+        assert_eq!(hits.len(), 2, "builderless construction flags");
+        assert!(
+            hits.iter()
+                .all(|hit| hit.contains("Object::builder::<ToastOverlay>()")),
+            "every hint routes to the generic builder"
         );
     }
 }

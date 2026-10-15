@@ -138,6 +138,42 @@ mod tests {
     }
 
     #[test]
+    fn generic_object_builders_need_labels() {
+        let files = vec![test_file(
+            "src/a.rs",
+            &[
+                "fn build_overlay() -> ToastOverlay {",
+                "    let overlay = glib::Object::builder::<ToastOverlay>()",
+                "        .property(\"child\", &content)",
+                "        .build();",
+                "    overlay",
+                "}",
+            ],
+        )];
+        assert_eq!(
+            missing_labels_hits(&files).len(),
+            1,
+            "unlabeled generic builder flags"
+        );
+        let clean = vec![test_file(
+            "src/b.rs",
+            &[
+                "fn build_overlay() -> ToastOverlay {",
+                "    let overlay = glib::Object::builder::<ToastOverlay>()",
+                "        .property(\"child\", &content)",
+                "        .build();",
+                "    overlay.update_property(&[Label(\"Overlay\")]);",
+                "    overlay",
+                "}",
+            ],
+        )];
+        assert!(
+            missing_labels_hits(&clean).is_empty(),
+            "labelled generic builder stays silent"
+        );
+    }
+
+    #[test]
     fn aliases_stay_silent() {
         let files = vec![test_file(
             "src/a.rs",

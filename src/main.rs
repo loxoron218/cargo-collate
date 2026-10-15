@@ -331,7 +331,8 @@ fn check_ui_rules(output: &mut String, dirs: &[String], files: &[SourceFile]) ->
     fail |= show(
         output,
         "Widget builders without `css_classes`, `tooltip_text`, and `can_focus`; direct \
-         construction or post-build setters; use the builder pattern instead.",
+         construction or post-build setters; use the builder pattern instead, or \
+         `glib::Object::builder::<T>()` for types without a generated builder.",
         &builder_pattern_hits(files),
     );
     fail |= show(

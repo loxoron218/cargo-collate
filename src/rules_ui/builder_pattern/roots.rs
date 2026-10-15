@@ -14,7 +14,7 @@ use crate::{
         import_alias::{original_name, split_alias, strip_raw},
     },
     rules_self_import::expand::expand,
-    rules_ui::missing_labels::widget_builders::WIDGET_BUILDERS,
+    rules_ui::missing_labels::widget_builders::{BUILDERLESS_WIDGETS, WIDGET_BUILDERS},
 };
 
 /// Crate roots whose types build UI widgets.
@@ -106,7 +106,8 @@ pub fn is_std_root(root: &str) -> bool {
 ///
 /// Plain inventory names always count; aliases only count on gtk roots, so
 /// same-named foreign types stay silent while unknown roots fall back to
-/// file gating upstream.
+/// file gating upstream. Builderless widgets resolve like inventoried ones
+/// so direct construction routes to the generic object builder.
 ///
 /// # Arguments
 ///
@@ -118,14 +119,19 @@ pub fn is_std_root(root: &str) -> bool {
 /// * `Option<String>` - Inventory name when the basename names a widget.
 #[must_use]
 pub fn widget_name(base: &str, roots: &BTreeMap<String, (String, String)>) -> Option<String> {
-    if WIDGET_BUILDERS.contains(&base) {
+    if WIDGET_BUILDERS.contains(&base) || BUILDERLESS_WIDGETS.contains(&base) {
         return Some(base.to_owned());
     }
     let (root, original) = roots.get(base)?;
-    if !is_ui_root(root) || !WIDGET_BUILDERS.contains(&original.as_str()) {
+    if !is_ui_root(root) {
         return None;
     }
-    Some(original.clone())
+    if WIDGET_BUILDERS.contains(&original.as_str())
+        || BUILDERLESS_WIDGETS.contains(&original.as_str())
+    {
+        return Some(original.clone());
+    }
+    None
 }
 
 #[cfg(test)]
