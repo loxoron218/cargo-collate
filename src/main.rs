@@ -15,6 +15,7 @@ pub mod gating;
 pub mod lexer;
 pub mod report;
 pub mod rules_alias;
+pub mod rules_cycles;
 pub mod rules_docs;
 pub mod rules_imports;
 pub mod rules_paths;
@@ -35,6 +36,7 @@ use {
     rules_alias::{
         first_alias::first_occurrence_alias, thiserror::thiserror_alias, unnecessary_aliases,
     },
+    rules_cycles::circular_deps,
     rules_docs::{
         missing_docs::{doc_header::missing_mod_docs, missing_fn_docs},
         must_use::unnecessary_must_use,
@@ -168,6 +170,12 @@ fn check_path_rules(output: &mut String, files: &[SourceFile]) -> bool {
         output,
         "Use imports resolving into the file own module; refer to own items directly instead.",
         &self_imports(files),
+    );
+    fail |= show(
+        output,
+        "Circular module dependencies outside parent-child aggregation; split shared items into a \
+         separate module instead.",
+        &circular_deps(files),
     );
     fail |= show(
         output,
