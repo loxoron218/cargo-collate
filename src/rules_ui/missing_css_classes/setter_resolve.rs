@@ -6,7 +6,7 @@
 //! while multi-widget bodies stay silent instead of guessing.
 
 use crate::rules_ui::{
-    builder_pattern::{chain::chain_build_at, trigger::ident_start_before},
+    builder_pattern::trigger::{chain_build_at, ident_start_before},
     missing_labels::{
         labels_trigger::{builder_type_at, cursor_after_gap, is_builder_open_at},
         widget_builders::is_widget_builder,

@@ -7,24 +7,15 @@
 //! default and flags separately as redundant.
 
 use crate::{
-    rules_ui::{
-        builder_pattern::{
-            file_scan_hits,
-            trigger::{builder_widget_at, has_method_call, is_build_open_at},
-        },
-        missing_labels::labels_trigger::is_builder_open_at,
+    rules_ui::builder_pattern::{
+        file_scan_hits,
+        trigger::{builder_chain_at, has_method_call},
     },
     scan::SourceFile,
 };
 
 /// Builder properties required on every widget chain.
 const REQUIRED_PROPS: [&str; 2] = ["css_classes", "tooltip_text"];
-
-/// Maximum bytes from `::builder` to its `.build(` terminator.
-///
-/// Chains separate on `;` or a new `::builder` well inside this window, so a
-/// longer gap means the builder never terminates rather than a missed chain.
-const CHAIN_SCAN_LIMIT: usize = 4000;
 
 /// Required properties missing from `segment`.
 ///
@@ -41,40 +32,6 @@ fn missing_props(segment: &str) -> Vec<&str> {
         .copied()
         .filter(|prop| !has_method_call(segment, prop))
         .collect()
-}
-
-/// Index of the `.build(` terminating the chain at `from`, if any.
-///
-/// Stops on `;` or a new `::builder` first, so stored intermediates and
-/// consecutive chains never pair across statements. Shared with
-/// default-class checks so both directions read one chain boundary.
-///
-/// # Arguments
-///
-/// * `body` - Joined code text with strings blanked and tails cut.
-/// * `from` - Byte index of the opening `::builder` marker.
-///
-/// # Returns
-///
-/// * `Option<usize>` - Byte index of the terminating dot, if it closes here.
-#[must_use]
-pub fn chain_build_at(body: &str, from: usize) -> Option<usize> {
-    let bytes = body.as_bytes();
-    let limit = from.saturating_add(CHAIN_SCAN_LIMIT);
-    let mut idx = from.saturating_add("::builder".len());
-    while idx < bytes.len() && idx < limit {
-        if is_build_open_at(bytes, idx) {
-            return Some(idx);
-        }
-        if bytes.get(idx) == Some(&b';') {
-            return None;
-        }
-        if is_builder_open_at(bytes, idx) {
-            return None;
-        }
-        idx = idx.saturating_add(1);
-    }
-    None
 }
 
 /// Hint listing the missing builder calls.
@@ -107,11 +64,7 @@ fn missing_hint(missing: &[&str]) -> String {
 ///
 /// * `Option<String>` - Hit line with a fix hint when properties are missing.
 fn chain_hit_at(file: &SourceFile, text: &str, idx: usize, lineno: usize) -> Option<String> {
-    if !is_builder_open_at(text.as_bytes(), idx) {
-        return None;
-    }
-    let widget = builder_widget_at(text, idx)?;
-    let end = chain_build_at(text, idx)?;
+    let (widget, end) = builder_chain_at(text, idx)?;
     let segment = text.get(idx..end).map_or("", |part| part);
     let missing = missing_props(segment);
     if missing.is_empty() {

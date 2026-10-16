@@ -8,11 +8,17 @@
 
 use crate::rules_ui::{
     missing_labels::{
-        labels_trigger::{builder_type_at, cursor_after_gap},
+        labels_trigger::{builder_type_at, cursor_after_gap, is_builder_open_at},
         widget_builders::WIDGET_BUILDERS,
     },
     ui_ext::is_ident_byte,
 };
+
+/// Maximum bytes from `::builder` to its `.build(` terminator.
+///
+/// Chains separate on `;` or a new `::builder` well inside this window, so a
+/// longer gap means the builder never terminates rather than a missed chain.
+pub const CHAIN_SCAN_LIMIT: usize = 4000;
 
 /// True if `marker` matches at `pos`.
 ///
@@ -123,6 +129,38 @@ pub fn has_method_call(segment: &str, name: &str) -> bool {
     false
 }
 
+/// True if the call at `open` passes only the literal `word`.
+///
+/// Requires the literal with identifier boundaries on both sides followed by
+/// the closer, so variables, longer identifiers, and multi-argument calls
+/// stay silent.
+///
+/// # Arguments
+///
+/// * `bytes` - Body bytes under scan.
+/// * `open` - Byte index of the `(` opener.
+/// * `word` - Expected literal such as `b"true"`.
+///
+/// # Returns
+///
+/// * `bool` - True for `(word)` with gaps allowed.
+#[must_use]
+pub fn is_literal_close(bytes: &[u8], open: usize, word: &[u8]) -> bool {
+    let start = cursor_after_gap(bytes, open.saturating_add(1));
+    if bytes
+        .get(start..start.saturating_add(word.len()))
+        .is_none_or(|window| window != word)
+    {
+        return false;
+    }
+    let after = start.saturating_add(word.len());
+    if bytes.get(after).is_some_and(|next| is_ident_byte(*next)) {
+        return false;
+    }
+    let close = cursor_after_gap(bytes, after);
+    bytes.get(close).is_some_and(|next| *next == b')')
+}
+
 /// Method name after the dot at `dot`, if any.
 ///
 /// Shares one spelling of dotted-call parsing between setter scans, so
@@ -146,6 +184,62 @@ pub fn dotted_name_at(body: &str, dot: usize) -> Option<(&str, usize)> {
     let name_end = ident_end_after(bytes, name_start)?;
     let name = body.get(name_start..name_end)?;
     Some((name, name_end))
+}
+
+/// Index of the `.build(` terminating the chain at `from`, if any.
+///
+/// Stops on `;` or a new `::builder` first, so stored intermediates and
+/// consecutive chains never pair across statements.
+///
+/// # Arguments
+///
+/// * `body` - Joined code text with strings blanked and tails cut.
+/// * `from` - Byte index of the opening `::builder` marker.
+///
+/// # Returns
+///
+/// * `Option<usize>` - Byte index of the terminating dot, if it closes here.
+#[must_use]
+pub fn chain_build_at(body: &str, from: usize) -> Option<usize> {
+    let bytes = body.as_bytes();
+    let limit = from.saturating_add(CHAIN_SCAN_LIMIT);
+    let mut idx = from.saturating_add("::builder".len());
+    while idx < bytes.len() && idx < limit {
+        if is_build_open_at(bytes, idx) {
+            return Some(idx);
+        }
+        if bytes.get(idx) == Some(&b';') {
+            return None;
+        }
+        if is_builder_open_at(bytes, idx) {
+            return None;
+        }
+        idx = idx.saturating_add(1);
+    }
+    None
+}
+
+/// Widget basename and terminator end for the builder chain at `from`, if any.
+///
+/// Shares one spelling of chain segmentation between chain and redundant
+/// scans, so stored intermediates never pair across statements twice.
+///
+/// # Arguments
+///
+/// * `body` - Joined code text with strings blanked and tails cut.
+/// * `from` - Byte index of the opening `::builder` marker.
+///
+/// # Returns
+///
+/// * `Option<(&str, usize)>` - Widget basename and terminator end on chains.
+#[must_use]
+pub fn builder_chain_at(body: &str, from: usize) -> Option<(&str, usize)> {
+    if !is_builder_open_at(body.as_bytes(), from) {
+        return None;
+    }
+    let widget = builder_widget_at(body, from)?;
+    let end = chain_build_at(body, from)?;
+    Some((widget, end))
 }
 
 /// Start index of the identifier ending at `end`, if any.

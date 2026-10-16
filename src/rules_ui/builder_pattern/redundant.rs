@@ -1,17 +1,21 @@
 //! Redundant focus-enablement detectors for widget builders.
 //!
-//! Flags explicit `.can_focus(true)` and `.set_can_focus(true)` calls, so
-//! focus policy never restates the default. Flagging stays strict: every
-//! widget type flags, including ones whose init override sets
-//! `can-focus=FALSE` — omit the call, or write `.can_focus(false)` for an
-//! explicit opt-out. `.set_focusable(true)` stays silent since `focusable`
-//! defaults to `FALSE` and really enables something.
+//! Flags explicit `.can_focus(true)` and `.set_can_focus(true)` calls, which
+//! restate the base default on every widget type, plus `.can_focus(false)`
+//! inside builder chains of widgets whose init already disables focus (see
+//! `focus_defaults`). `.can_focus(false)` elsewhere stays silent as a
+//! deliberate opt-out, as does `.set_can_focus(false)` post-build whose
+//! widget type never resolves. `.set_focusable(true)` stays silent since
+//! `focusable` defaults to `FALSE` and really enables something.
 
 use crate::{
     rules_ui::{
-        builder_pattern::{file_scan_hits, trigger::dotted_name_at},
+        builder_pattern::{
+            file_scan_hits,
+            redundant_false::redundant_false_at,
+            trigger::{dotted_name_at, is_literal_close},
+        },
         missing_labels::labels_trigger::cursor_after_gap,
-        ui_ext::is_ident_byte,
     },
     scan::SourceFile,
 };
@@ -34,10 +38,6 @@ fn is_redundant_name(name: &str) -> bool {
 
 /// True if the call at `open` passes only literal `true`.
 ///
-/// Requires `true` with identifier boundaries on both sides followed by the
-/// closer, so variables, longer identifiers, and multi-argument calls stay
-/// silent.
-///
 /// # Arguments
 ///
 /// * `bytes` - Body bytes under scan.
@@ -48,19 +48,7 @@ fn is_redundant_name(name: &str) -> bool {
 /// * `bool` - True for `(true)` with gaps allowed.
 #[must_use]
 pub fn is_true_close(bytes: &[u8], open: usize) -> bool {
-    let start = cursor_after_gap(bytes, open.saturating_add(1));
-    if bytes
-        .get(start..start.saturating_add("true".len()))
-        .is_none_or(|window| window != b"true")
-    {
-        return false;
-    }
-    let after = start.saturating_add("true".len());
-    if bytes.get(after).is_some_and(|next| is_ident_byte(*next)) {
-        return false;
-    }
-    let close = cursor_after_gap(bytes, after);
-    bytes.get(close).is_some_and(|next| *next == b')')
+    is_literal_close(bytes, open, b"true")
 }
 
 /// Method name at `dot`, if it restates the default with literal `true`.
@@ -99,15 +87,17 @@ fn redundant_call_at(body: &str, dot: usize) -> Option<&str> {
 ///
 /// * `Option<String>` - Hit line with a fix hint on redundant calls.
 fn redundant_hit_at(file: &SourceFile, text: &str, idx: usize, lineno: usize) -> Option<String> {
-    let name = redundant_call_at(text, idx)?;
-    let line = file
-        .lines
-        .get(lineno.saturating_sub(1))
-        .map_or("", String::as_str);
-    Some(format!(
-        "{}:{lineno}:{line} help: remove redundant .{name}(true); it restates the default",
-        file.path
-    ))
+    if let Some(name) = redundant_call_at(text, idx) {
+        let line = file
+            .lines
+            .get(lineno.saturating_sub(1))
+            .map_or("", String::as_str);
+        return Some(format!(
+            "{}:{lineno}:{line} help: remove redundant .{name}(true); it restates the default",
+            file.path
+        ));
+    }
+    redundant_false_at(file, text, idx, lineno)
 }
 
 /// Redundant focus-enablement findings for one file.
@@ -123,11 +113,12 @@ fn file_redundant_hits(file: &SourceFile) -> Vec<String> {
     file_scan_hits(file, redundant_hit_at)
 }
 
-/// Redundant `.can_focus(true)` findings across files.
+/// Redundant focus restatements across files.
 ///
-/// Flags builder and post-build spellings alike with no exemptions beyond
-/// gtk-family gating; `.can_focus(false)`, variables, and `set_focusable`
-/// stay silent.
+/// Flags builder and post-build `true` spellings alike with no exemptions
+/// beyond gtk-family gating, plus `.can_focus(false)` inside builder chains
+/// of init-unfocusable widgets. Deliberate `.can_focus(false)` opt-outs,
+/// variables, and `set_focusable` stay silent.
 ///
 /// # Arguments
 ///
@@ -226,6 +217,61 @@ mod tests {
         assert!(
             redundant_focus_hits(&files).is_empty(),
             "false, variables, focusable, and strings stay silent"
+        );
+    }
+
+    #[test]
+    fn false_on_unfocusable_init_flags() {
+        let files = vec![test_file(
+            "src/a.rs",
+            &[
+                "use gtk::WindowControls;",
+                "fn f() {",
+                "    let controls = WindowControls::builder()",
+                "        .side(Start)",
+                "        .can_focus( false )",
+                "        .build();",
+                "    controls",
+                "}",
+            ],
+        )];
+        let hits = redundant_focus_hits(&files);
+        assert_eq!(hits.len(), 1, "init-restated false flags once");
+        assert!(
+            hits.first()
+                .is_some_and(|hit| hit.contains("WindowControls")),
+            "hint names the init-unfocusable widget"
+        );
+    }
+
+    #[test]
+    fn false_opt_out_stays_silent() {
+        let files = vec![
+            test_file(
+                "src/a.rs",
+                &[
+                    "use gtk::Button;",
+                    "fn f(btn: &Button) {",
+                    "    btn.set_can_focus(false);",
+                    "}",
+                ],
+            ),
+            test_file(
+                "src/b.rs",
+                &[
+                    "use gtk::Box;",
+                    "fn f() {",
+                    "    let box_ = Box::builder()",
+                    "        .can_focus(false)",
+                    "        .build();",
+                    "    box_",
+                    "}",
+                ],
+            ),
+        ];
+        assert!(
+            redundant_focus_hits(&files).is_empty(),
+            "unresolvable setters and deliberate opt-outs stay silent"
         );
     }
 

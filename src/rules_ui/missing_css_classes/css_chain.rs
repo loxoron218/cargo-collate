@@ -9,9 +9,8 @@
 use crate::{
     rules_ui::{
         builder_pattern::{
-            chain::chain_build_at,
             file_scan_hits,
-            trigger::{builder_widget_at, has_method_call},
+            trigger::{builder_widget_at, chain_build_at, has_method_call},
         },
         missing_css_classes::{
             class_require::collect_missing,

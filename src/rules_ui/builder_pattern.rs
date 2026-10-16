@@ -3,9 +3,9 @@
 //! Parent index for the capability. The `box_shape` submodule counts call
 //! arguments, the `chain` submodule flags inventoried widget builders
 //! missing styling calls, `direct` flags direct construction and post-build
-//! setters, `redundant` flags explicit focus restatements, `setters` holds
-//! setter-call matching, `trigger` holds
-//! call-boundary matching, `roots` holds
+//! setters, `redundant` flags explicit focus restatements, `focus_defaults`
+//! holds init-time focus defaults, `setters` holds setter-call matching,
+//! `trigger` holds call-boundary matching, `roots` holds
 //! import-root resolution, and shared text scanning lives here so both
 //! directions read identical analysis text. Only gtk-family files scan:
 //! same-named foreign types stay silent. Nothing else stays exempt: test code
@@ -14,7 +14,9 @@
 pub mod box_shape;
 pub mod chain;
 pub mod direct;
+pub mod focus_defaults;
 pub mod redundant;
+pub mod redundant_false;
 pub mod roots;
 pub mod setters;
 pub mod trigger;

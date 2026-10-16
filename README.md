@@ -27,7 +27,7 @@ workspace scope is the shared git toplevel.
 | --- | --- |
 | `anyhow_leak` | Anyhow in public API; library uses typed thiserror enums. |
 | `anyhow_site` | Anyhow outside tests and binaries; library uses typed errors. |
-| `builder_pattern_hits` | Widget builders without `css_classes` and `tooltip_text`, redundant `.can_focus(true)`; direct construction or post-build setters; use the builder pattern instead, or `glib::Object::builder::<T>()` for types without a generated builder. |
+| `builder_pattern_hits` | Widget builders without `css_classes` and `tooltip_text`, redundant focus restatements (`.can_focus(true)`; `.can_focus(false)` where the widget init already disables focus); direct construction or post-build setters; use the builder pattern instead, or `glib::Object::builder::<T>()` for types without a generated builder. |
 | `clone_check` | Copy-paste clones across sources; ignore duplicates that are only import blocks. |
 | `default_features_hits` | Crate dependencies without `default-features = false`; add the opt-out with only required features. |
 | `deep_nesting` | Module nesting over the depth limit; keep module nesting shallow (max 2). |
