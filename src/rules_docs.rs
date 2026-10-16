@@ -6,6 +6,7 @@
 pub mod item_args;
 pub mod keywords;
 pub mod missing_docs;
+pub mod missing_sections;
 pub mod must_use;
 pub mod pub_mod_inner;
 pub mod sections;

@@ -39,6 +39,7 @@ use {
     rules_cycles::circular_deps,
     rules_docs::{
         missing_docs::{doc_header::missing_mod_docs, missing_fn_docs},
+        missing_sections::{missing_errors, missing_panics},
         must_use::unnecessary_must_use,
         pub_mod_inner::pub_mod_inner_docs,
         sections::{unnecessary_errors, unnecessary_panics},
@@ -264,13 +265,23 @@ fn check_doc_rules(output: &mut String, files: &[SourceFile]) -> bool {
     );
     fail |= show(
         output,
-        "Unnecessary Panics sections; private items and pure public items never require them.",
+        "Unnecessary Panics sections; pure items and private test items never require them.",
         &unnecessary_panics(files),
     );
     fail |= show(
         output,
-        "Unnecessary Errors sections; private items and non-Result items never require them.",
+        "Unnecessary Errors sections; non-Result items and private test items never require them.",
         &unnecessary_errors(files),
+    );
+    fail |= show(
+        output,
+        "Missing Panics sections; private non-test panic-capable functions require them.",
+        &missing_panics(files),
+    );
+    fail |= show(
+        output,
+        "Missing Errors sections; private non-test Result functions require them.",
+        &missing_errors(files),
     );
     fail |= show(
         output,

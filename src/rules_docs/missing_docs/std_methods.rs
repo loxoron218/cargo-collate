@@ -8,8 +8,10 @@
 /// Contracts for `Default`, `Display`/`Debug`, `Clone`/`ToOwned`, conversions
 /// (`From`/`Into`/`TryFrom`/`TryInto`/`FromStr`/`ToString`), comparisons
 /// (`PartialEq`/`Eq`/`PartialOrd`/`Ord`), hashing (`Hash`), `Drop`, borrow
-/// traits (`Borrow`/`BorrowMut`/`AsRef`/`AsMut`/`Deref`/`DerefMut`) live in
-/// std (nightly std trait index, 1.100.0);
+/// traits (`Borrow`/`BorrowMut`/`AsRef`/`AsMut`/`Deref`/`DerefMut`),
+/// iteration (`Iterator`/`IntoIterator`/`FromIterator`), indexing
+/// (`Index`/`IndexMut`), and operator overloads (`Add`/`Sub`/`Mul`/`Div` and
+/// kin) live in std (nightly std trait index, 1.100.0);
 /// per-item docs only restate them. Matching is by exact name.
 #[must_use]
 pub fn is_std_method(name: &str) -> bool {
@@ -50,5 +52,27 @@ pub fn is_std_method(name: &str) -> bool {
             | "borrow_mut"
             | "as_ref"
             | "as_mut"
+            | "next"
+            | "next_back"
+            | "size_hint"
+            | "count"
+            | "last"
+            | "nth"
+            | "fold"
+            | "collect"
+            | "index"
+            | "index_mut"
+            | "add"
+            | "sub"
+            | "mul"
+            | "div"
+            | "rem"
+            | "bitand"
+            | "bitor"
+            | "bitxor"
+            | "shl"
+            | "shr"
+            | "neg"
+            | "not"
     )
 }

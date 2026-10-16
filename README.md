@@ -45,6 +45,8 @@ workspace scope is the shared git toplevel.
 | `low_log_hits` | Low-level logging; use `info`, `warn`, or `error` for significant events. |
 | `missing_context` | Bare `?` without context, including inline anyhow! errors; use `.context()` or `.with_context()`. |
 | `missing_fn_docs` | Functions without attached docs; every fn outside test code needs `///`, std methods exempt. Complements `clippy::missing_docs_in_private_items`. |
+| `missing_errors` | Missing Errors sections; private non-test Result functions require them. Complements `clippy::missing_errors_doc`. |
+| `missing_panics` | Missing Panics sections; private non-test panic-capable functions require them. Complements `clippy::missing_panics_doc`. |
 | `missing_labels` | Widget builders without accessibility labels; call `update_property` with an import-resolved label alias in the same `fn`, with no exemptions. |
 | `missing_css_classes` | Widget builders dropping required default CSS classes; keep auto `image-button`, `text-button`, `toggle`, and their kin in `css_classes` or use `add_css_class` after build. |
 | `missing_underline` | Mnemonic `_X` label text without underline enablement; add `use_underline(true)` to the builder or `set_use_underline(true)` in the same `fn`, with no exemptions. |
@@ -70,9 +72,9 @@ workspace scope is the shared git toplevel.
 | `thread_unsafe_hits` | Thread-unsafe Cell/RefCell/Rc; use Atomics, parking_lot, OnceLock, or Arc instead. |
 | `underscore_idents` | Underscore-prefixed identifiers; use meaningful names instead of discards. |
 | `unnecessary_aliases` | Unnecessary import aliases; remove `as` without conflicts. |
-| `unnecessary_errors` | Unnecessary Errors sections; private items and non-Result items never require them. Complements `clippy::missing_errors_doc`. |
+| `unnecessary_errors` | Unnecessary Errors sections; non-Result items and private test items never require them. Complements `clippy::missing_errors_doc`. |
 | `unnecessary_must_use` | Unnecessary `must_use` attributes; private, unit, mut-arg, or forwarding items never require them. Complements `clippy::must_use_candidate` / `clippy::return_self_not_must_use`. |
-| `unnecessary_panics` | Unnecessary Panics sections; private items and pure public items never require them. Complements `clippy::missing_panics_doc`. |
+| `unnecessary_panics` | Unnecessary Panics sections; pure items and private test items never require them. Complements `clippy::missing_panics_doc`. |
 | `unnecessary_test_docs` | Comments on private test-module functions; shared pub helpers stay documented. |
 | `unnecessary_types` | Unnecessary type definitions; aliases removable warning-free at every use site never require them. Complements `clippy::type_complexity`. |
 | `unstructured_tracing` | Unstructured tracing; use fields for structured data, never interpolated strings. |

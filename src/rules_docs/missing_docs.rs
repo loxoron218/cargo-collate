@@ -13,7 +13,7 @@ pub mod attachment;
 pub mod doc_header;
 pub mod std_methods;
 
-use std::collections::HashSet;
+use std::{collections::HashSet, hash::BuildHasher};
 
 use crate::{
     gating::{gated_stems, is_stem_gated},
@@ -27,7 +27,8 @@ use crate::{
 };
 
 /// True if `path` lives under an integration-test tree.
-fn is_test_path(path: &str) -> bool {
+#[must_use]
+pub fn is_test_path(path: &str) -> bool {
     path.starts_with("tests/") || path.contains("/tests/")
 }
 
@@ -35,7 +36,11 @@ fn is_test_path(path: &str) -> bool {
 ///
 /// Integration-test trees and parent-gated file modules stay wholly exempt;
 /// inline test modules filter per item instead.
-fn is_test_file(file: &SourceFile, gated: &HashSet<String>) -> bool {
+#[must_use]
+pub fn is_test_file<S>(file: &SourceFile, gated: &HashSet<String, S>) -> bool
+where
+    S: BuildHasher,
+{
     is_test_path(&file.path) || is_stem_gated(file, gated)
 }
 

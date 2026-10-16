@@ -28,8 +28,8 @@ text per lint.
 - `src/rules_alias.rs` + `src/rules_alias/` — `first_occurrence_alias`, `thiserror_alias`,
   `unnecessary_aliases`
 - `src/rules_docs.rs` + `src/rules_docs/` — `missing_fn_docs`, `missing_mod_docs`,
-  `pub_mod_inner_docs`, `unnecessary_errors`, `unnecessary_must_use`, `unnecessary_panics`,
-  `unnecessary_test_docs`
+  `missing_errors`, `missing_panics`, `pub_mod_inner_docs`, `unnecessary_errors`,
+  `unnecessary_must_use`, `unnecessary_panics`, `unnecessary_test_docs`
 - `src/rules_imports.rs` + `src/rules_imports/` — `mixed_import_groups`, `stray_uses`
 - `src/rules_paths.rs` + `src/rules_paths/` — `enum_variants`, `prelude_groups`, `qualified_paths`
 - `src/rules_self_import.rs` + `src/rules_self_import/` — `self_imports`
