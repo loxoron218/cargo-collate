@@ -16,9 +16,7 @@ cargo collate
 
 No arguments. Exits `0` when clean, `1` on findings, `2` on usage / environment errors.
 
-Scans every `*.rs` file under `.` via `rg --files` (`target/` and `vendor/` excluded), so
-workspace-excluded crates stay visible. Declarative `*.ui`, `*.blp`, `*.xml`, and `*.css` files
-resolve through the same listing. Package dirs resolve via the nearest ancestor `Cargo.toml`;
+Scans every `*.rs` and declarative `*.ui`, `*.blp`, `*.xml`, and `*.css` file under `.` via `rg --files` (`target/` and `vendor/` excluded), including workspace-excluded crates. Package dirs resolve via the nearest ancestor `Cargo.toml`;
 workspace scope is the shared git toplevel.
 
 ## Lints
