@@ -1,8 +1,9 @@
 //! Doc and test-marker scans above `fn` items.
 
 use crate::{
-    lexer::{literal::strip_strings, marker::is_doc_line, word::has_word},
-    rules_simple::cfg_test::is_real_cfg_line,
+    lexer::{
+        cfg_marker::is_real_cfg_line, literal::strip_strings, marker::is_doc_line, word::has_word,
+    },
     rules_tests::{range::code_of, test_docs::attached_above},
 };
 

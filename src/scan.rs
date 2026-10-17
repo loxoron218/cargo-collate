@@ -11,14 +11,13 @@
 pub mod support;
 
 use std::{
-    collections::BTreeMap,
     env::{split_paths, var_os},
     fs::read_to_string,
     path::Path,
     process::Command,
 };
 
-use crate::{lexer::literal::stripped_lines, rules_ui::builder_pattern::roots::import_roots};
+use crate::lexer::literal::stripped_lines;
 
 /// A scanned Cargo manifest with its original lines.
 #[derive(Debug)]
@@ -45,11 +44,6 @@ pub struct SourceFile {
     /// interiors; comments stay intact for comment-aware callers while code
     /// positions cut them as before. Display paths keep using `lines`.
     pub stripped: Vec<String>,
-    /// Import roots keyed by bound name with crate root and original.
-    ///
-    /// Computed once at load through `import_roots` so detectors resolve
-    /// names without re-parsing imports on every call.
-    pub roots: BTreeMap<String, (String, String)>,
 }
 
 /// Original and blanked lines with indices for display-preserving scans.
@@ -298,14 +292,12 @@ pub fn load_files(paths: &[String]) -> Vec<SourceFile> {
         .map(|(path, text)| {
             let lines: Vec<String> = text.lines().map(str::to_owned).collect();
             let stripped = stripped_lines(&lines);
-            let roots = import_roots(&lines);
             let ws = scope_for(&path, &root);
             SourceFile {
                 path,
                 ws,
                 lines,
                 stripped,
-                roots,
             }
         })
         .collect()

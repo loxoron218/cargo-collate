@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::{rules_simple::cfg_test::is_real_cfg_line, scan::SourceFile};
+use crate::{lexer::cfg_marker::is_real_cfg_line, scan::SourceFile};
 
 /// Indexed modules backing the dependency graph.
 #[derive(Debug)]

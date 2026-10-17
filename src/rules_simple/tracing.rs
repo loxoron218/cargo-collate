@@ -2,7 +2,8 @@
 
 use crate::{
     rules_simple::{
-        tracing_mask::{MaskedLiteral, mask_text},
+        tracing_core::MaskedLiteral,
+        tracing_mask::mask_text,
         tracing_parse::{
             effective_args, group_end, has_bang_name, is_field_arg, next_bang, paren_at, span_text,
         },

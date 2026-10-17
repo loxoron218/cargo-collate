@@ -15,7 +15,7 @@ use crate::{
         builder_pattern::{
             box_shape::is_gtk_box_new,
             file_scan_hits,
-            roots::{is_std_root, widget_name},
+            roots::{import_roots, is_std_root, widget_name},
             setters::setter_call_at,
             trigger::{ident_end_after, ident_start_before, is_ctor_name},
         },
@@ -85,12 +85,19 @@ fn direct_call_at(
 /// * `text` - Joined code text with strings blanked and tails cut.
 /// * `idx` - Byte index under scan.
 /// * `lineno` - One-based line number holding `idx`.
+/// * `roots` - Bound names with crate roots and import originals.
 ///
 /// # Returns
 ///
 /// * `Option<String>` - Hit line with a fix hint on direct calls.
-fn direct_hit_at(file: &SourceFile, text: &str, idx: usize, lineno: usize) -> Option<String> {
-    if let Some((base, widget)) = direct_call_at(text, idx, &file.roots) {
+fn direct_hit_at(
+    file: &SourceFile,
+    text: &str,
+    idx: usize,
+    lineno: usize,
+    roots: &BTreeMap<String, (String, String)>,
+) -> Option<String> {
+    if let Some((base, widget)) = direct_call_at(text, idx, roots) {
         let line = file
             .lines
             .get(lineno.saturating_sub(1))
@@ -131,7 +138,10 @@ fn direct_hit_at(file: &SourceFile, text: &str, idx: usize, lineno: usize) -> Op
 ///
 /// * `Vec<String>` - Hit lines with fix hints appended.
 fn file_direct_hits(file: &SourceFile) -> Vec<String> {
-    file_scan_hits(file, direct_hit_at)
+    let roots = import_roots(&file.lines);
+    file_scan_hits(file, |found, text, idx, lineno| {
+        direct_hit_at(found, text, idx, lineno, &roots)
+    })
 }
 
 /// Direct-construction and setter findings across files.

@@ -4,8 +4,7 @@
 //! classify each statement as macro-use, ordinary, or cfg-test.
 
 use crate::{
-    lexer::word::has_word,
-    rules_simple::cfg_test::is_real_cfg_line,
+    lexer::{cfg_marker::is_real_cfg_line, word::has_word},
     rules_tests::{
         mod_groups::{
             CFG_TEST_GROUP, MACRO_USE_GROUP, ORDINARY_GROUP,

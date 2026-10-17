@@ -3,6 +3,7 @@
 //! Parent index for the lexer capability. Submodules hold focused helpers
 //! while this file re-exports the public surface used by rule modules.
 
+pub mod cfg_marker;
 pub mod literal;
 pub mod marker;
 pub mod qualified;

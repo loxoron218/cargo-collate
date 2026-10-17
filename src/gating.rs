@@ -3,7 +3,7 @@
 use std::{collections::HashSet, hash::BuildHasher};
 
 use crate::{
-    lexer::visibility::match_file_mod_decl, rules_simple::cfg_test::is_real_cfg_line,
+    lexer::{cfg_marker::is_real_cfg_line, visibility::match_file_mod_decl},
     scan::SourceFile,
 };
 

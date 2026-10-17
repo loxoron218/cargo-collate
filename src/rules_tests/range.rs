@@ -1,12 +1,10 @@
 //! Test-range scanning for cfg-test modules.
 
-use crate::{
-    lexer::{
-        literal::{raw_open_span, strip_strings},
-        marker::cut_line_comment,
-        word::has_word,
-    },
-    rules_simple::cfg_test::is_real_cfg_line,
+use crate::lexer::{
+    cfg_marker::is_real_cfg_line,
+    literal::{quoted_close, raw_open_span, strip_strings},
+    marker::cut_line_comment,
+    word::has_word,
 };
 
 /// Brace-scan state carried across lines for multi-line literals.
@@ -89,24 +87,6 @@ fn raw_close(chars: &[char], from: usize, hashes: usize) -> Option<usize> {
             return Some(past);
         }
         j = j.saturating_add(1);
-    }
-    None
-}
-
-/// Index just past the closing quote from `from`, if the string ends here.
-///
-/// Backslash escapes stay skipped so an escaped quote never ends the string.
-#[must_use]
-pub fn quoted_close(chars: &[char], from: usize) -> Option<usize> {
-    let mut j = from;
-    while let Some(c) = chars.get(j).copied() {
-        if c == '"' {
-            return Some(j.saturating_add(1));
-        }
-        j = j.saturating_add(1);
-        if c == '\\' {
-            j = j.saturating_add(1);
-        }
     }
     None
 }

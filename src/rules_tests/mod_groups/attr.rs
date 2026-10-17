@@ -4,8 +4,10 @@
 //! resolve whole bracket-balanced blocks instead of single lines.
 
 use crate::{
-    lexer::word::{has_word, word_match_at},
-    rules_simple::cfg_test::is_real_cfg_line,
+    lexer::{
+        cfg_marker::is_real_cfg_line,
+        word::{has_word, word_match_at},
+    },
     rules_tests::{
         order::{match_mod_head, strip_attrs},
         range::{brace_count, code_of},

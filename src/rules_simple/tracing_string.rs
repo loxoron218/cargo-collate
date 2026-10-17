@@ -1,6 +1,6 @@
 //! Quoted, raw, and char literal scanning for tracing masks.
 
-use crate::rules_simple::tracing_mask::{Masker, mask_blank, mask_close, mask_opener, mask_push};
+use crate::rules_simple::tracing_core::{Masker, mask_blank, mask_close, mask_opener, mask_push};
 
 /// Next scan position after the quoted string opening at `pos`.
 pub fn mask_quoted(masker: &mut Masker, bytes: &[u8], pos: usize) -> usize {

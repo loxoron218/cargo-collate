@@ -1,6 +1,6 @@
 //! Raw-string and quoted-literal blanking.
 
-use crate::{lexer::marker::skip_block_comment, rules_tests::range::quoted_close};
+use crate::lexer::marker::skip_block_comment;
 
 /// Span of a raw string.
 ///
@@ -116,6 +116,24 @@ fn raw_span_end(chars: &[char], i: usize) -> Option<RawSpan> {
         j = j.saturating_add(1);
     }
     Some(RawSpan { hashes, end: None })
+}
+
+/// Index just past the closing quote from `from`, if the string ends here.
+///
+/// Backslash escapes stay skipped so an escaped quote never ends the string.
+#[must_use]
+pub fn quoted_close(chars: &[char], from: usize) -> Option<usize> {
+    let mut j = from;
+    while let Some(c) = chars.get(j).copied() {
+        if c == '"' {
+            return Some(j.saturating_add(1));
+        }
+        j = j.saturating_add(1);
+        if c == '\\' {
+            j = j.saturating_add(1);
+        }
+    }
+    None
 }
 
 /// End exclusive of the quoted string whose quote sits at `i`.

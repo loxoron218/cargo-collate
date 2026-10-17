@@ -8,10 +8,10 @@ use std::collections::HashSet;
 use crate::{
     gating::gated_stems,
     lexer::{
+        cfg_marker::is_real_cfg_line,
         visibility::{find_mod_semi, strip_pub_block},
         word::has_word,
     },
-    rules_simple::cfg_test::is_real_cfg_line,
     rules_tests::{
         order::strip_attrs,
         range::{anyhow_gap, code_of, in_ranges, test_ranges},

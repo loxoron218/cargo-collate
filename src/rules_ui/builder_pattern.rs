@@ -94,7 +94,7 @@ fn is_ui_file(file: &SourceFile) -> bool {
 #[must_use]
 pub fn file_scan_hits(
     file: &SourceFile,
-    hit_at: fn(&SourceFile, &str, usize, usize) -> Option<String>,
+    hit_at: impl Fn(&SourceFile, &str, usize, usize) -> Option<String>,
 ) -> Vec<String> {
     if !is_ui_file(file) {
         return Vec::new();
