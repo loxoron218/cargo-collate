@@ -6,7 +6,7 @@
 use std::collections::BTreeSet;
 
 use crate::{
-    rules_tests::range::{brace_delta, code_of},
+    rules_harness::range::{brace_delta, code_of},
     rules_ui::missing_labels::labels_trigger::{has_accessible_label, has_builder_trigger},
     scan::SourceFile,
 };
@@ -105,7 +105,7 @@ mod tests {
 
     use crate::{
         rules_ui::missing_labels::labels_body::{fn_body_end, fn_body_text, fn_missing_label},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

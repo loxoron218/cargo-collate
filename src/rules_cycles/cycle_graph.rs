@@ -15,6 +15,7 @@ use crate::{
     rules_cycles::cycle_resolve::{
         ModuleIndex, is_prefix_pair, longest_module_target, stmt_test_gated,
     },
+    rules_harness::range::{in_ranges, stray_gap, test_ranges},
     rules_imports::{
         import_attr::attached_start,
         origin::{locals_for, package_names, top_modules_by_package},
@@ -24,7 +25,6 @@ use crate::{
         resolve::{file_mod, resolve_full},
     },
     rules_simple::manifest::package_dir_for,
-    rules_tests::range::{in_ranges, stray_gap, test_ranges},
     scan::SourceFile,
 };
 

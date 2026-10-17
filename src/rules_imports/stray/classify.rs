@@ -8,8 +8,8 @@ use crate::{
         visibility::{mod_name_tail, strip_pub_block},
         word::{boundary_after, has_word},
     },
+    rules_harness::order::{is_macro_call, strip_attrs},
     rules_imports::rank::is_use_start,
-    rules_tests::order::{is_macro_call, strip_attrs},
 };
 
 /// True if stripped `code` opens an `extern` item.

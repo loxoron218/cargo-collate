@@ -134,7 +134,7 @@ mod tests {
         rules_simple::layout::{
             MAX_FILE_LINES, MAX_FOLDER_DEPTH, deep_nesting, depth_below_leaf, long_files,
         },
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

@@ -7,7 +7,7 @@
 
 use crate::{
     lexer::word::declared_fn_name,
-    rules_tests::range::code_of,
+    rules_harness::range::code_of,
     rules_ui::{
         missing_css_classes::{
             class_require::collect_missing,
@@ -158,7 +158,7 @@ pub fn setter_hits(files: &[SourceFile]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        rules_ui::missing_css_classes::setter_hits::setter_hits, scan::support::test_file,
+        rules_ui::missing_css_classes::setter_hits::setter_hits, scan::builders::test_file,
     };
 
     #[test]

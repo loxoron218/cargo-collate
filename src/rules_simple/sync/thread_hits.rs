@@ -38,7 +38,7 @@ fn check_file_thread_unsafe(file: &SourceFile, out: &mut Vec<String>) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_simple::sync::thread_hits::thread_unsafe_hits, scan::support::test_file};
+    use crate::{rules_simple::sync::thread_hits::thread_unsafe_hits, scan::builders::test_file};
 
     #[test]
     fn thread_imports_flagged() {

@@ -5,7 +5,7 @@
 
 use crate::{
     lexer::word::declared_fn_name,
-    rules_tests::range::code_of,
+    rules_harness::range::code_of,
     rules_ui::{
         missing_labels::labels_body::{fn_body_end, fn_body_text},
         missing_underline::{
@@ -108,7 +108,7 @@ pub fn underline_hits(files: &[SourceFile]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        rules_ui::missing_underline::underline_body::underline_hits, scan::support::test_file,
+        rules_ui::missing_underline::underline_body::underline_hits, scan::builders::test_file,
     };
 
     #[test]

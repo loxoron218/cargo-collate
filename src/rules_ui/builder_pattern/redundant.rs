@@ -134,7 +134,7 @@ pub fn redundant_focus_hits(files: &[SourceFile]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        rules_ui::builder_pattern::redundant::redundant_focus_hits, scan::support::test_file,
+        rules_ui::builder_pattern::redundant::redundant_focus_hits, scan::builders::test_file,
     };
 
     #[test]

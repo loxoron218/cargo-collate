@@ -3,16 +3,16 @@
 //! Parent index for the capability. Shared line scanning and marker helpers
 //! live here while `dot_ok` flags error swallows, `parent_path` flags
 //! `super::` paths, `scoped_pub` flags restricted visibility, `path_include`
-//! flags path attributes, `low_log` flags low-level logging, `doc_blank`
-//! flags missing blanks above docs, and `split_mod_doc` flags split docs.
+//! flags path attributes, `low_log` flags low-level logging, `comment_blank`
+//! flags missing blanks above docs, and `comment_split` flags split docs.
 
-pub mod doc_blank;
+pub mod comment_blank;
+pub mod comment_split;
 pub mod dot_ok;
 pub mod low_log;
 pub mod parent_path;
 pub mod path_include;
 pub mod scoped_pub;
-pub mod split_mod_doc;
 
 use crate::{
     lexer::{literal::strip_strings, marker::cut_line_comment},

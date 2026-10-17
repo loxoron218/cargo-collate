@@ -5,7 +5,7 @@
 //! `css_classes` instead.
 
 use crate::{
-    rules_tests::range::{in_ranges, stray_gap, test_ranges},
+    rules_harness::range::{in_ranges, stray_gap, test_ranges},
     rules_ui::ui_scan::has_ui_reference,
     scan::SourceFile,
 };
@@ -108,7 +108,7 @@ pub fn ui_file_hits(files: &[SourceFile], ui_paths: &[String]) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_ui::ui_files::ui_file_hits, scan::support::test_file};
+    use crate::{rules_ui::ui_files::ui_file_hits, scan::builders::test_file};
 
     #[test]
     fn presence_and_refs_combine() {

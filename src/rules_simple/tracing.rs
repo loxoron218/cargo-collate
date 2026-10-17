@@ -2,11 +2,11 @@
 
 use crate::{
     rules_simple::{
-        tracing_core::MaskedLiteral,
         tracing_mask::mask_text,
         tracing_parse::{
             effective_args, group_end, has_bang_name, is_field_arg, next_bang, paren_at, span_text,
         },
+        tracing_state::MaskedLiteral,
     },
     scan::SourceFile,
 };
@@ -196,7 +196,7 @@ fn message_has_placeholder(span: (usize, usize), literals: &[MaskedLiteral], bas
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_simple::tracing::unstructured_tracing_hits, scan::support::test_file};
+    use crate::{rules_simple::tracing::unstructured_tracing_hits, scan::builders::test_file};
 
     fn hit_count(lines: &[&str]) -> usize {
         unstructured_tracing_hits(&[test_file("src/a.rs", lines)]).len()

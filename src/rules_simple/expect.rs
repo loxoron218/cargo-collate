@@ -63,7 +63,7 @@ pub fn expect_hits(files: &[SourceFile]) -> Vec<String> {
 mod tests {
     use crate::{
         rules_simple::expect::{expect_hits, has_expect_attr},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

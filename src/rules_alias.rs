@@ -147,7 +147,7 @@ fn is_alias_at(code: &str, pos: usize, alias: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_alias::unnecessary_aliases, scan::support::test_file};
+    use crate::{rules_alias::unnecessary_aliases, scan::builders::test_file};
 
     #[test]
     fn plain_alias_flagged() {

@@ -1,7 +1,7 @@
 //! Length-preserving source masking for tracing analysis.
 
 use crate::rules_simple::{
-    tracing_core::{MaskedText, Masker, mask_blank, mask_close},
+    tracing_state::{MaskedText, Masker, mask_blank, mask_close},
     tracing_string::{char_end, mask_carried, mask_quoted, mask_raw, mask_raw_open, raw_open},
 };
 

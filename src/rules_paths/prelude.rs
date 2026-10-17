@@ -205,7 +205,7 @@ fn prelude_line(code_lines: &[String], starts: &[usize], pos: usize) -> Option<u
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_paths::prelude::prelude_groups, scan::support::test_file};
+    use crate::{rules_paths::prelude::prelude_groups, scan::builders::test_file};
 
     #[test]
     fn gtk_prelude_flagged_libadwaita_allowed() {

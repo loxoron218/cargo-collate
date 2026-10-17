@@ -15,14 +15,14 @@ pub mod gating;
 pub mod lexer;
 pub mod report;
 pub mod rules_alias;
+pub mod rules_annotations;
 pub mod rules_cycles;
-pub mod rules_docs;
+pub mod rules_harness;
 pub mod rules_imports;
 pub mod rules_paths;
 pub mod rules_self_import;
 pub mod rules_simple;
-pub mod rules_tests;
-pub mod rules_types;
+pub mod rules_typedef;
 pub mod rules_ui;
 pub mod scan;
 
@@ -36,14 +36,15 @@ use {
     rules_alias::{
         first_alias::first_occurrence_alias, thiserror::thiserror_alias, unnecessary_aliases,
     },
-    rules_cycles::circular_deps,
-    rules_docs::{
-        missing_docs::{doc_header::missing_mod_docs, missing_fn_docs},
+    rules_annotations::{
+        missing_headers::{missing_fn_docs, module_header::missing_mod_docs},
         missing_sections::{missing_errors, missing_panics},
         must_use::unnecessary_must_use,
         pub_mod_inner::pub_mod_inner_docs,
         sections::{unnecessary_errors, unnecessary_panics},
     },
+    rules_cycles::circular_deps,
+    rules_harness::{check_test_rules, suite_comments::unnecessary_test_docs},
     rules_imports::{mixed_import_groups, stray::stray_uses},
     rules_paths::{enum_variants, prelude::prelude_groups, qualified_paths},
     rules_self_import::self_imports,
@@ -52,9 +53,9 @@ use {
         dependencies::default_features_hits,
         expect::expect_hits,
         hygiene::{
-            doc_blank::doc_blank_hits, dot_ok::dot_ok_hits, low_log::low_log_hits,
-            parent_path::parent_hits, path_include::path_include_hits, scoped_pub::scoped_pub_hits,
-            split_mod_doc::split_mod_doc_hits,
+            comment_blank::doc_blank_hits, comment_split::split_mod_doc_hits, dot_ok::dot_ok_hits,
+            low_log::low_log_hits, parent_path::parent_hits, path_include::path_include_hits,
+            scoped_pub::scoped_pub_hits,
         },
         layout::{deep_nesting, long_files},
         manifest::stray_mod_rs,
@@ -63,8 +64,7 @@ use {
         tracing::unstructured_tracing_hits,
         underscore::underscore_idents,
     },
-    rules_tests::{check_test_rules, test_docs::unnecessary_test_docs},
-    rules_types::unnecessary_types,
+    rules_typedef::unnecessary_types,
     rules_ui::{
         builder_pattern::builder_pattern_hits, missing_css_classes::missing_css_classes_hits,
         missing_labels::missing_labels_hits, missing_underline::missing_underline_hits,
@@ -318,12 +318,14 @@ fn check_layout_rules(output: &mut String, dirs: &[String], files: &[SourceFile]
     );
     fail |= show(
         output,
-        "Generic module directories; group by capability/domain instead.",
+        "Generic module directories and file names across `src/`, `tests/`, `benches/`; group by \
+         capability/domain instead.",
         &generic_dirs(&rg_files(dirs)),
     );
     fail |= show(
         output,
-        "Duplicate module stems; keep every file name unique codebase-wide.",
+        "Duplicate module stems across `src/`, `tests/`, `benches/`; keep every file name unique \
+         codebase-wide.",
         &duplicate_stems(&rg_files(dirs)),
     );
     fail |= show(

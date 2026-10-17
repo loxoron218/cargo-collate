@@ -49,7 +49,7 @@ pub fn missing_css_classes_hits(files: &[SourceFile]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        rules_ui::missing_css_classes::missing_css_classes_hits, scan::support::test_file,
+        rules_ui::missing_css_classes::missing_css_classes_hits, scan::builders::test_file,
     };
 
     #[test]

@@ -59,7 +59,7 @@ pub fn scoped_pub_hits(files: &[SourceFile]) -> Vec<String> {
 mod tests {
     use crate::{
         rules_simple::hygiene::scoped_pub::{has_scoped_pub, scoped_pub_hits},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

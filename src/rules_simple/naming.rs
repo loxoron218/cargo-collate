@@ -1,8 +1,8 @@
 //! Capability grouping and global stem uniqueness.
 //!
 //! Parent index for the capability. Shared path helpers live here while
-//! `stem` folds singulars and plurals, `grouping` flags generic directories,
-//! and `collision` flags shared file-name words.
+//! `stem` folds singulars and plurals, `grouping` flags generic directory and
+//! file names, and `collision` flags shared file-name words.
 
 pub mod collision;
 pub mod grouping;
@@ -82,6 +82,7 @@ mod tests {
     fn non_leaf_roots_stay_silent() {
         let files = vec![
             "docs/models/idea.rs".to_owned(),
+            "docs/skill.md".to_owned(),
             "fuzz/utils/fuzz.rs".to_owned(),
             "src/models/a.rs".to_owned(),
         ];

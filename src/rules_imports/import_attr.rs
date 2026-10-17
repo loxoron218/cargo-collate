@@ -7,7 +7,7 @@
 
 use crate::{
     lexer::word::{has_word, word_match_at},
-    rules_tests::{
+    rules_harness::{
         mod_groups::attr::{
             attached_from, has_detached_block, is_pure_attr_text, resolve_trailing_attr_start,
         },
@@ -86,7 +86,7 @@ pub fn has_detached_attr_gap(file: &SourceFile, attr_start: usize) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_imports::mixed_import_groups, scan::support::test_file};
+    use crate::{rules_imports::mixed_import_groups, scan::builders::test_file};
 
     #[test]
     fn credentials_shape_fixed_silent() {

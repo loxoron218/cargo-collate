@@ -282,7 +282,7 @@ pub fn resolve_widget(body: &str, var: &str, setter: usize) -> Option<(String, S
 #[cfg(test)]
 mod tests {
     use crate::{
-        rules_ui::missing_css_classes::setter_resolve::resolve_widget, scan::support::test_file,
+        rules_ui::missing_css_classes::setter_resolve::resolve_widget, scan::builders::test_file,
     };
 
     #[test]

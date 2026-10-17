@@ -11,7 +11,7 @@ pub mod classify;
 pub mod placement;
 
 #[cfg(test)]
-mod tests;
+mod stray_cases;
 
 use crate::{rules_imports::stray::placement::check_file, scan::SourceFile};
 

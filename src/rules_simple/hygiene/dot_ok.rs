@@ -40,7 +40,7 @@ pub fn dot_ok_hits(files: &[SourceFile]) -> Vec<String> {
 mod tests {
     use crate::{
         rules_simple::hygiene::dot_ok::{dot_ok_hits, has_dot_ok},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

@@ -261,7 +261,7 @@ fn push_hit(manifest: &ManifestFile, idx: usize, out: &mut Vec<String>) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_simple::dependencies::default_features_hits, scan::support::test_manifest};
+    use crate::{rules_simple::dependencies::default_features_hits, scan::builders::test_manifest};
 
     #[test]
     fn string_and_inline_shapes() {

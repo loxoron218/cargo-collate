@@ -141,7 +141,7 @@ pub fn builder_pattern_hits(files: &[SourceFile]) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_ui::builder_pattern::builder_pattern_hits, scan::support::test_file};
+    use crate::{rules_ui::builder_pattern::builder_pattern_hits, scan::builders::test_file};
 
     #[test]
     fn standards_example_stays_silent() {

@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 
 use crate::{
     rules_imports::{group_findings, mixed_import_groups},
-    scan::support::test_file,
+    scan::builders::test_file,
 };
 
 #[test]

@@ -44,7 +44,7 @@ pub fn circular_deps(files: &[SourceFile]) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_cycles::circular_deps, scan::support::test_file};
+    use crate::{rules_cycles::circular_deps, scan::builders::test_file};
 
     #[test]
     fn pair_cycle_flagged() {

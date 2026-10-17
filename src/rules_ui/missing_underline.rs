@@ -42,7 +42,7 @@ pub fn missing_underline_hits(files: &[SourceFile]) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_ui::missing_underline::missing_underline_hits, scan::support::test_file};
+    use crate::{rules_ui::missing_underline::missing_underline_hits, scan::builders::test_file};
 
     #[test]
     fn labeled_builders_flag() {

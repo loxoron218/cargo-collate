@@ -92,7 +92,7 @@ fn clean_alias(raw: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_alias::thiserror::thiserror_alias, scan::support::test_file};
+    use crate::{rules_alias::thiserror::thiserror_alias, scan::builders::test_file};
 
     #[test]
     fn plain_alias_flagged() {

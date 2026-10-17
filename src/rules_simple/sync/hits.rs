@@ -184,7 +184,7 @@ pub fn check_body_with(
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_simple::sync::hits::std_sync_hits, scan::support::test_file};
+    use crate::{rules_simple::sync::hits::std_sync_hits, scan::builders::test_file};
 
     #[test]
     fn std_imports_flagged() {

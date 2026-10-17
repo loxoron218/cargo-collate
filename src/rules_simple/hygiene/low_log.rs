@@ -50,7 +50,7 @@ pub fn low_log_hits(files: &[SourceFile]) -> Vec<String> {
 mod tests {
     use crate::{
         rules_simple::hygiene::low_log::{has_low_log, low_log_hits},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

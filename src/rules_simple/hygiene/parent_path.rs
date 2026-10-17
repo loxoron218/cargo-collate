@@ -45,7 +45,7 @@ pub fn parent_hits(files: &[SourceFile]) -> Vec<String> {
 mod tests {
     use crate::{
         rules_simple::hygiene::parent_path::{has_parent_path, parent_hits},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

@@ -9,7 +9,7 @@ use crate::{
         visibility::{strip_pub_block, strip_pub_word},
         word::boundary_after,
     },
-    rules_tests::order::strip_attrs,
+    rules_harness::order::strip_attrs,
 };
 
 /// Rank of the `std` group (`std`, `core`, `alloc`).

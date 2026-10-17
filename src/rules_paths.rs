@@ -169,7 +169,7 @@ fn check_file_enums(file: &SourceFile) -> Vec<String> {
 mod tests {
     use crate::{
         rules_paths::{enum_variants, qualified_paths},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

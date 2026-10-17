@@ -24,7 +24,8 @@ awkward interface unchanged.
 ### Capability-based grouping
 
 Group modules by capability/domain. **Never** use generic structures like `models/`, `handlers/`,
-`utils/`, `types/`, or `common/`.
+`utils/`, `types/`, or `common/`. This applies to Rust modules under `src/`, `tests/`, and
+`benches/`; top-level `docs/` holds skill docs and stays allowed.
 
 ```text
 src/

@@ -1,11 +1,14 @@
-//! Generic directory detection for capability grouping.
+//! Generic name detection for capability grouping.
 //!
-//! Flags files under layer/role or scaffolding directories so modules group
-//! by capability/domain instead.
+//! Flags generic directory components and file stems so modules group by
+//! capability/domain instead.
 
-use crate::rules_simple::{layout::below_leaf, naming::stem::normalize_stem};
+use crate::rules_simple::{
+    layout::below_leaf,
+    naming::{basename_stem, split_words, stem::normalize_stem},
+};
 
-/// Normalized generic directory stems, already singular.
+/// Normalized generic name words, already singular.
 ///
 /// Extensible: add the normalized singular here when a new generic name
 /// appears. Covers layer/role names (`model`, `handler`, `type`), shared
@@ -44,40 +47,55 @@ const FORBIDDEN_NORMS: [&str; 28] = [
     "utility",
 ];
 
-/// True if one directory component uses a generic name.
+/// First generic word in one directory or file name, if any.
 ///
-/// Compares the whole component normalized so `models` and `Model` both hit
-/// while `rules_types` stays silent as a capability name.
-fn component_is_generic(component: &str) -> bool {
-    let norm = normalize_stem(component);
-    FORBIDDEN_NORMS.contains(&norm.as_str())
+/// Splits on `_` and `-` and folds singulars/plurals per word so `models`,
+/// `service_types`, and `TYPES` all hit while `rules_simple` stays silent.
+fn generic_word_in(name: &str) -> Option<String> {
+    split_words(name).into_iter().find_map(|word| {
+        let norm = normalize_stem(&word);
+        FORBIDDEN_NORMS.contains(&norm.as_str()).then_some(norm)
+    })
 }
 
-/// First generic directory component below the scan leaf, if any.
+/// First generic directory word below the scan leaf, if any.
 ///
-/// Compares whole components normalized so `models` and `model` both hit.
+/// Compares each component per word so `models` and `rules_types` both hit.
 fn generic_component(path: &str) -> Option<String> {
     let rel = below_leaf(path)?;
     let (parent, _) = rel.rsplit_once('/')?;
-    parent
-        .split('/')
-        .find(|component| component_is_generic(component))
-        .map(str::to_owned)
+    parent.split('/').find_map(generic_word_in)
 }
 
-/// Files under a generic directory, one hit per file, sorted.
+/// Generic word in the file stem, if any.
+///
+/// Catches `types.rs` as well as compounds like `service_types.rs`.
+fn generic_file_word(path: &str) -> Option<String> {
+    let rel = below_leaf(path)?;
+    generic_word_in(&basename_stem(rel)?)
+}
+
+/// Generic directory or file-name hit for one path, if any.
+fn generic_hit(path: &str) -> Option<String> {
+    if let Some(word) = generic_component(path) {
+        return Some(format!(
+            "{path}: generic directory '{word}' (use capability/domain name)"
+        ));
+    }
+    generic_file_word(path)
+        .map(|word| format!("{path}: generic file name '{word}' (use capability/domain name)"))
+}
+
+/// Files with a generic directory or file name, one hit per file, sorted.
 ///
 /// Only `src/`, `tests/`, and `benches/` leaves count, including
-/// package-prefixed paths like `collate/src/utils/x.rs`.
+/// package-prefixed paths like `collate/src/utils/x.rs`. Top-level `docs/`
+/// holds skill docs and stays silent.
 #[must_use]
 pub fn generic_dirs(rs_files: &[String]) -> Vec<String> {
     let mut hits: Vec<String> = rs_files
         .iter()
-        .filter_map(|path| {
-            generic_component(path).map(|dir| {
-                format!("{path}: generic directory '{dir}' (use capability/domain name)")
-            })
-        })
+        .filter_map(|path| generic_hit(path))
         .collect();
     hits.sort();
     hits.dedup();
@@ -144,6 +162,26 @@ mod tests {
         assert!(
             generic_dirs(&clean).is_empty(),
             "capability and grouping dirs stay silent"
+        );
+    }
+
+    #[test]
+    fn compound_and_file_names_flagged() {
+        let files = vec![
+            "src/types.rs".to_owned(),
+            "src/rules_types.rs".to_owned(),
+            "src/api/service_types.rs".to_owned(),
+            "src/rules_types/load.rs".to_owned(),
+            "src/Service-Types/load.rs".to_owned(),
+        ];
+        assert_eq!(generic_dirs(&files).len(), 5, "types stems flag");
+        let clean = vec![
+            "src/playback/engine.rs".to_owned(),
+            "src/rules_simple/engine.rs".to_owned(),
+        ];
+        assert!(
+            generic_dirs(&clean).is_empty(),
+            "capability compounds stay silent"
         );
     }
 }

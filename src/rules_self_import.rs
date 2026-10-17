@@ -39,7 +39,7 @@ mod tests {
     use crate::{
         gating::src_gated_stems,
         rules_self_import::{expand::expand, resolve::file_mod, self_imports},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

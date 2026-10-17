@@ -109,7 +109,7 @@ pub fn chain_hits(files: &[SourceFile]) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_ui::builder_pattern::chain::chain_hits, scan::support::test_file};
+    use crate::{rules_ui::builder_pattern::chain::chain_hits, scan::builders::test_file};
 
     #[test]
     fn incomplete_builders_flag_missing() {

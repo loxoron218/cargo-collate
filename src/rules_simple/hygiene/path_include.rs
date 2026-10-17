@@ -85,7 +85,7 @@ mod tests {
         rules_simple::hygiene::path_include::{
             has_include_macro, has_path_attr, path_include_hits,
         },
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

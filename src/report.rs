@@ -113,7 +113,7 @@ mod tests {
         let readme_text = read_to_string("README.md").unwrap_or_default();
         let agents_text = read_to_string("AGENTS.md").unwrap_or_default();
         let entry_text = read_to_string("src/main.rs").unwrap_or_default();
-        let rules_text = read_to_string("src/rules_tests.rs").unwrap_or_default();
+        let rules_text = read_to_string("src/rules_harness.rs").unwrap_or_default();
         assert!(!readme_text.is_empty(), "readme loads");
         assert!(!agents_text.is_empty(), "agents loads");
         assert!(!entry_text.is_empty(), "entry loads");

@@ -23,7 +23,7 @@ pub fn line_comments(files: &[SourceFile]) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_simple::comment_lines::line_comments, scan::support::test_file};
+    use crate::{rules_simple::comment_lines::line_comments, scan::builders::test_file};
 
     #[test]
     fn raw_string_comment_lines_silent() {

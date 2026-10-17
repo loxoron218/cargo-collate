@@ -175,7 +175,7 @@ fn gaps_only(bytes: &[u8], from: usize, to: usize) -> bool {
 mod tests {
     use crate::{
         rules_ui::builder_pattern::{box_shape::is_gtk_box_new, direct::direct_hits},
-        scan::support::test_file,
+        scan::builders::test_file,
     };
 
     #[test]

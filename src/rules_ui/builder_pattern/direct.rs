@@ -159,7 +159,7 @@ pub fn direct_hits(files: &[SourceFile]) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_ui::builder_pattern::direct::direct_hits, scan::support::test_file};
+    use crate::{rules_ui::builder_pattern::direct::direct_hits, scan::builders::test_file};
 
     #[test]
     fn direct_construction_flagged() {

@@ -15,7 +15,7 @@ use std::collections::BTreeSet;
 
 use crate::{
     lexer::word::declared_fn_name,
-    rules_tests::range::code_of,
+    rules_harness::range::code_of,
     rules_ui::missing_labels::{
         labels_alias::label_aliases,
         labels_body::{fn_body_end, fn_missing_label},
@@ -97,7 +97,7 @@ pub fn missing_labels_hits(files: &[SourceFile]) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rules_ui::missing_labels::missing_labels_hits, scan::support::test_file};
+    use crate::{rules_ui::missing_labels::missing_labels_hits, scan::builders::test_file};
 
     #[test]
     fn builders_without_labels_flagged() {

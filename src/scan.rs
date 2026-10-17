@@ -8,7 +8,7 @@
 
 /// Test-only source-file builders.
 #[cfg(test)]
-pub mod support;
+pub mod builders;
 
 use std::{
     env::{split_paths, var_os},

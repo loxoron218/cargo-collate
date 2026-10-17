@@ -3,7 +3,7 @@
 //! Regression coverage for scope approximation, gated imports, local
 //! collisions, and the thiserror division of labor.
 
-use crate::{rules_alias::first_alias::first_occurrence_alias, scan::support::test_file};
+use crate::{rules_alias::first_alias::first_occurrence_alias, scan::builders::test_file};
 
 #[test]
 fn correct_order_silent() {

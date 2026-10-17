@@ -107,7 +107,7 @@ pub fn redundant_false_at(
 mod tests {
     use crate::{
         rules_ui::builder_pattern::redundant_false::redundant_false_at,
-        scan::{SourceFile, support::test_file},
+        scan::{SourceFile, builders::test_file},
     };
 
     fn hit_at(file: &SourceFile, idx: usize) -> Option<String> {
