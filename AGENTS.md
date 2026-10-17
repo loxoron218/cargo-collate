@@ -1,9 +1,9 @@
 ---
 name: code_agent
-description: Senior Rust developer using modern idiomatic Rust for `collate`
+description: Senior Rust developer using modern idiomatic Rust for `cargo-collate`
 ---
 
-# collate
+# cargo-collate
 
 Project-specific hygiene checks for strict Rust projects (cargo plugin, std-only plus `rg` / `jscpd`
 CLIs).
@@ -12,7 +12,7 @@ CLIs).
 
 - **Runtime:** std-only, no `[dependencies]`; synchronous CLI via `std::process::Command`
 - **External tools:** `rg` (ripgrep) and `jscpd` in `PATH`, invoked as subprocesses
-- **Distribution:** `cargo install --path collate`, binary `cargo-collate` via `src/main.rs`
+- **Distribution:** `cargo install cargo-collate` (user-level), binary `cargo-collate` via `src/main.rs`
 
 ## Codebase map (src/)
 

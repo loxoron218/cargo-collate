@@ -1,4 +1,4 @@
-# collate
+# cargo-collate
 
 Project-specific hygiene checks for strict Rust projects. Pure Rust plus the `rg` / `jscpd` CLIs.
 
@@ -10,7 +10,7 @@ Project-specific hygiene checks for strict Rust projects. Pure Rust plus the `rg
 ## Usage
 
 ```bash
-cargo install --path collate
+cargo install cargo-collate
 cargo collate
 ```
 

@@ -4,8 +4,8 @@ description = "Project-specific hygiene checks for strict Rust projects."
 edition = "2024"
 keywords = ["cargo", "hygiene", "lints"]
 license = "GPL-3.0-or-later"
-name = "collate"
-repository = "https://github.com/loxoron218/coding-template"
+name = "cargo-collate"
+repository = "https://github.com/loxoron218/cargo-collate"
 version = "0.1.0"
 
 [[bin]]
@@ -13,6 +13,7 @@ name = "cargo-collate"
 path = "src/main.rs"
 
 [lints.cargo]
+manual_readme = "allow"
 non_kebab_case_features = "deny"
 non_kebab_case_packages = "deny"
 pedantic = { level = "deny", priority = -1 }
