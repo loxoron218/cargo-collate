@@ -103,3 +103,94 @@ pub fn user_args() -> Vec<OsString> {
         args
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{collections::BTreeSet, fs::read_to_string};
+
+    #[test]
+    fn docs_single_source() {
+        let readme_text = read_to_string("README.md").unwrap_or_default();
+        let agents_text = read_to_string("AGENTS.md").unwrap_or_default();
+        let entry_text = read_to_string("src/main.rs").unwrap_or_default();
+        let rules_text = read_to_string("src/rules_tests.rs").unwrap_or_default();
+        assert!(!readme_text.is_empty(), "readme loads");
+        assert!(!agents_text.is_empty(), "agents loads");
+        assert!(!entry_text.is_empty(), "entry loads");
+        assert!(!rules_text.is_empty(), "rules load");
+        let slugs: Vec<String> = readme_text
+            .lines()
+            .map(str::trim_start)
+            .filter_map(|trimmed| trimmed.strip_prefix("| `"))
+            .filter(|rest| rest.contains('`'))
+            .map(|rest| rest.split('`').next().unwrap_or_default())
+            .filter(|slug| !slug.is_empty())
+            .map(str::to_owned)
+            .collect();
+        assert!(!slugs.is_empty(), "lints table parses");
+        let unique: BTreeSet<&str> = slugs.iter().map(String::as_str).collect();
+        assert_eq!(unique.len(), slugs.len(), "lints table stays unique");
+        let readme_norm: BTreeSet<String> = slugs
+            .iter()
+            .map(|slug| {
+                slug.strip_suffix("_hits")
+                    .unwrap_or(slug.as_str())
+                    .to_owned()
+            })
+            .collect();
+        let combined = format!("{entry_text}{rules_text}");
+        let mut found: Vec<String> = combined
+            .match_indices('&')
+            .map(|pair| pair.0)
+            .map(|pos| {
+                let trimmed = combined
+                    .get(pos..)
+                    .map_or("", |rest| rest.strip_prefix('&').unwrap_or(""));
+                let ident: String = trimmed
+                    .chars()
+                    .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                    .collect();
+                (trimmed, ident)
+            })
+            .filter(|pair| {
+                !pair.1.is_empty()
+                    && pair
+                        .1
+                        .chars()
+                        .next()
+                        .is_some_and(|c| c.is_ascii_lowercase())
+                    && pair
+                        .0
+                        .get(pair.1.len()..)
+                        .is_some_and(|tail| tail.trim_start().starts_with('('))
+                    && !matches!(
+                        pair.1.as_str(),
+                        "cfg_test_files"
+                            | "load_manifests"
+                            | "rg_files"
+                            | "rg_manifests"
+                            | "rg_search"
+                            | "rg_ui_files"
+                    )
+            })
+            .map(|pair| pair.1)
+            .collect();
+        if entry_text.contains("clone_check") {
+            found.push("clone_check".to_owned());
+        }
+        let wired_norm: BTreeSet<String> = found
+            .iter()
+            .map(|name| {
+                name.strip_suffix("_hits")
+                    .unwrap_or(name.as_str())
+                    .to_owned()
+            })
+            .collect();
+        assert_eq!(wired_norm, readme_norm, "readme covers wired detectors");
+        let mut spans = agents_text.split('`').skip(1).step_by(2).filter(|part| {
+            let base = part.strip_suffix("_hits").unwrap_or(part);
+            readme_norm.contains(base)
+        });
+        assert!(spans.next().is_none(), "agents stays free of lint names");
+    }
+}
