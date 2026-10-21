@@ -54,8 +54,8 @@ use {
         expect::expect_hits,
         hygiene::{
             comment_blank::doc_blank_hits, comment_split::split_mod_doc_hits, dot_ok::dot_ok_hits,
-            low_log::low_log_hits, parent_path::parent_hits, path_include::path_include_hits,
-            scoped_pub::scoped_pub_hits,
+            let_underscore::let_underscore_hits, low_log::low_log_hits, parent_path::parent_hits,
+            path_include::path_include_hits, scoped_pub::scoped_pub_hits,
         },
         layout::{deep_nesting, long_files},
         manifest::stray_mod_rs,
@@ -124,6 +124,11 @@ fn check_name_rules(output: &mut String, dirs: &[String], files: &[SourceFile]) 
         output,
         "Dot-ok error swallows; propagate errors with context instead.",
         &dot_ok_hits(files),
+    );
+    fail |= show(
+        output,
+        "Let-underscore discards; handle values explicitly instead of discarding them.",
+        &let_underscore_hits(files),
     );
     fail |= show(
         output,

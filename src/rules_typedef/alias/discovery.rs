@@ -86,7 +86,7 @@ fn step_blocks(stack: &mut Vec<bool>, segment: &mut String, code: &str) {
                 segment.clear();
             }
             '}' => {
-                let _: Option<bool> = stack.pop();
+                _ = stack.pop();
                 segment.clear();
             }
             ';' if depth <= 0 => segment.clear(),

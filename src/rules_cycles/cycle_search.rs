@@ -32,7 +32,7 @@ pub fn cycle_members(adj: &BTreeMap<String, BTreeSet<String>>) -> BTreeSet<Strin
             break;
         }
         for node in removable {
-            let _: bool = live.remove(&node);
+            _ = live.remove(&node);
         }
     }
     live
@@ -165,10 +165,10 @@ pub fn find_cycle(
         vec![(start.to_owned(), live_neighbors(adj, live, start), 0)];
     while let Some((node, next)) = stack_next(&mut stack) {
         let Some(next) = next else {
-            let _: bool = done.insert(node.clone());
+            _ = done.insert(node.clone());
             drop(stack.pop());
             drop(path.pop());
-            let _: Option<usize> = at.remove(&node);
+            _ = at.remove(&node);
             continue;
         };
         if next == start && !path.is_empty() {

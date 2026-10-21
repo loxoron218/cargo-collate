@@ -38,6 +38,7 @@ workspace scope is the shared git toplevel.
 | `first_occurrence_alias` | Import alias on first occurrence; keep the first import plain and alias subsequent colliding imports instead. |
 | `generic_dirs` | Generic module directories and file names across `src/`, `tests/`, `benches/`; group by capability/domain instead. |
 | `inner_test_gates` | Inner cfg-test gates; use cfg(test) mod tests instead. |
+| `let_underscore` | Let-underscore discards; handle values explicitly instead of discarding them. |
 | `line_comments` | Remove all line comments. |
 | `long_files` | Source files over limit (400 lines); trim unnecessary lines first, split into smaller modules when no longer possible. |
 | `low_log_hits` | Low-level logging; use `info`, `warn`, or `error` for significant events. |

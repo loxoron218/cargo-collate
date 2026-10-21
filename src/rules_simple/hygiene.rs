@@ -4,11 +4,13 @@
 //! live here while `dot_ok` flags error swallows, `parent_path` flags
 //! `super::` paths, `scoped_pub` flags restricted visibility, `path_include`
 //! flags path attributes, `low_log` flags low-level logging, `comment_blank`
-//! flags missing blanks above docs, and `comment_split` flags split docs.
+//! flags missing blanks above docs, `comment_split` flags split docs, and
+//! `let_underscore` flags let-underscore discards.
 
 pub mod comment_blank;
 pub mod comment_split;
 pub mod dot_ok;
+pub mod let_underscore;
 pub mod low_log;
 pub mod parent_path;
 pub mod path_include;
