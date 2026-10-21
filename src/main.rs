@@ -11,6 +11,7 @@
 //!
 //! Process exit code clean, findings, or misuse.
 
+pub mod annotation_rules;
 pub mod gating;
 pub mod lexer;
 pub mod report;
@@ -32,19 +33,13 @@ use std::{
 };
 
 use {
+    annotation_rules::check_doc_rules,
     report::{clone_check, report_misuse, show, user_args},
     rules_alias::{
         first_alias::first_occurrence_alias, thiserror::thiserror_alias, unnecessary_aliases,
     },
-    rules_annotations::{
-        missing_headers::{missing_fn_docs, module_header::missing_mod_docs},
-        missing_sections::{missing_errors, missing_panics},
-        must_use::unnecessary_must_use,
-        pub_mod_inner::pub_mod_inner_docs,
-        sections::{unnecessary_errors, unnecessary_panics},
-    },
     rules_cycles::circular_deps,
-    rules_harness::{check_test_rules, suite_comments::unnecessary_test_docs},
+    rules_harness::check_test_rules,
     rules_imports::{mixed_import_groups, stray::stray_uses},
     rules_paths::{enum_variants, prelude::prelude_groups, qualified_paths},
     rules_self_import::self_imports,
@@ -64,7 +59,6 @@ use {
         tracing::unstructured_tracing_hits,
         underscore::underscore_idents,
     },
-    rules_typedef::unnecessary_types,
     rules_ui::{
         builder_pattern::builder_pattern_hits, missing_css_classes::missing_css_classes_hits,
         missing_labels::missing_labels_hits, missing_underline::missing_underline_hits,
@@ -239,65 +233,6 @@ fn check_path_rules(output: &mut String, files: &[SourceFile]) -> bool {
         output,
         "Aliased thiserror::Error; keep thiserror plain and alias the other Error instead.",
         &thiserror_alias(files),
-    );
-    fail
-}
-
-/// Unnecessary attributes and doc sections removable warning-free.
-fn check_doc_rules(output: &mut String, files: &[SourceFile]) -> bool {
-    let mut fail = false;
-    fail |= show(
-        output,
-        "Functions without attached docs; outside test code every fn needs a /// line, std \
-         methods exempt.",
-        &missing_fn_docs(files),
-    );
-    fail |= show(
-        output,
-        "Files without leading module docs; every file needs a //! line on line 1.",
-        &missing_mod_docs(files),
-    );
-    fail |= show(
-        output,
-        "Public modules with inner //! docs; move to /// above attributes.",
-        &pub_mod_inner_docs(files),
-    );
-    fail |= show(
-        output,
-        "Unnecessary must_use attributes; private, unit, mut-arg, or forwarding items never \
-         require them.",
-        &unnecessary_must_use(files),
-    );
-    fail |= show(
-        output,
-        "Unnecessary Panics sections; pure items and private test items never require them.",
-        &unnecessary_panics(files),
-    );
-    fail |= show(
-        output,
-        "Unnecessary Errors sections; non-Result items and private test items never require them.",
-        &unnecessary_errors(files),
-    );
-    fail |= show(
-        output,
-        "Missing Panics sections; private non-test panic-capable functions require them.",
-        &missing_panics(files),
-    );
-    fail |= show(
-        output,
-        "Missing Errors sections; private non-test Result functions require them.",
-        &missing_errors(files),
-    );
-    fail |= show(
-        output,
-        "Comments on private test-module functions; shared pub helpers stay documented.",
-        &unnecessary_test_docs(files),
-    );
-    fail |= show(
-        output,
-        "Unnecessary type definitions; aliases removable warning-free at every use site never \
-         require them.",
-        &unnecessary_types(files),
     );
     fail
 }

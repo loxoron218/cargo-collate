@@ -3,6 +3,7 @@
 //! Parent index for the capability. Submodules hold the detectors while this
 //! file keeps the shared signature helpers plus the detector tests.
 
+pub mod args_returns;
 pub mod item_args;
 pub mod keywords;
 pub mod missing_headers;
@@ -10,6 +11,7 @@ pub mod missing_sections;
 pub mod must_use;
 pub mod pub_mod_inner;
 pub mod sections;
+pub mod signature;
 
 use std::collections::BTreeSet;
 
@@ -21,6 +23,7 @@ use crate::{
         word::{declared_fn_name, has_word},
     },
     rules_alias::collect::{collect_imports, collect_use_stmts},
+    rules_annotations::signature::scan_depth,
     rules_harness::range::brace_delta,
 };
 
@@ -38,16 +41,22 @@ fn is_filler(trimmed: &str) -> bool {
 }
 
 /// Joined signature starting after `idx`, up to `limit` lines.
+///
+/// Body and item terminators only count outside brackets so array lengths
+/// like `[T; N]` and struct patterns keep joining.
 fn joined_signature(lines: &[String], idx: usize, limit: usize) -> String {
     let mut out = String::new();
+    let mut depth: i32 = 0;
     for line in lines.iter().skip(idx).take(limit) {
         let code = code_of(line);
         if is_filler(code.trim()) {
             continue;
         }
+        let scanned = scan_depth(&code, depth);
+        depth = scanned.0;
         out.push_str(&code);
         out.push(' ');
-        if code.contains('{') || code.contains(';') {
+        if scanned.1 {
             break;
         }
     }
@@ -61,22 +70,6 @@ fn is_pub_sig(sig: &str) -> bool {
     sig.match_indices("pub")
         .map(|(i, _)| i)
         .any(|i| is_bare_pub_at(sig, i))
-}
-
-/// Return-type fragment of `sig` after `->`, if any.
-///
-/// Cuts the body opener and trailing semicolons so only the type remains.
-fn return_tail(sig: &str) -> Option<String> {
-    let arrow = sig.find("->")?;
-    let mut tail = sig
-        .get(arrow.saturating_add(2)..)
-        .unwrap_or("")
-        .trim_start()
-        .to_owned();
-    if let Some(end) = tail.find(['{', ';']) {
-        tail.truncate(end);
-    }
-    Some(tail)
 }
 
 /// Top-level `fn` names declared in `lines`.
@@ -98,15 +91,6 @@ fn file_fn_names(lines: &[String]) -> BTreeSet<String> {
 fn imported_binders(lines: &[String]) -> BTreeSet<String> {
     let (binders, _) = collect_imports(&collect_use_stmts(lines));
     binders
-}
-
-/// True if `sig` returns unit or never, or has no return arrow.
-fn sig_returns_unit(sig: &str) -> bool {
-    let Some(tail) = return_tail(sig) else {
-        return true;
-    };
-    let tail = tail.trim_start();
-    tail.is_empty() || tail.starts_with("()") || tail.starts_with('!')
 }
 
 /// Updated depth and started flag after one brace character.

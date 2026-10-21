@@ -114,10 +114,12 @@ mod tests {
         let agents_text = read_to_string("AGENTS.md").unwrap_or_default();
         let entry_text = read_to_string("src/main.rs").unwrap_or_default();
         let rules_text = read_to_string("src/rules_harness.rs").unwrap_or_default();
+        let annotation_text = read_to_string("src/annotation_rules.rs").unwrap_or_default();
         assert!(!readme_text.is_empty(), "readme loads");
         assert!(!agents_text.is_empty(), "agents loads");
         assert!(!entry_text.is_empty(), "entry loads");
         assert!(!rules_text.is_empty(), "rules load");
+        assert!(!annotation_text.is_empty(), "annotations load");
         let slugs: Vec<String> = readme_text
             .lines()
             .map(str::trim_start)
@@ -138,7 +140,7 @@ mod tests {
                     .to_owned()
             })
             .collect();
-        let combined = format!("{entry_text}{rules_text}");
+        let combined = format!("{entry_text}{rules_text}{annotation_text}");
         let mut found: Vec<String> = combined
             .match_indices('&')
             .map(|pair| pair.0)

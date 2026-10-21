@@ -30,6 +30,7 @@ workspace scope is the shared git toplevel.
 | `clone_check` | Copy-paste clones across sources; ignore duplicates that are only import blocks. |
 | `default_features_hits` | Crate dependencies without `default-features = false`; add the opt-out with only required features. |
 | `deep_nesting` | Module nesting over the depth limit; keep module nesting shallow (max 2). |
+| `doc_args_returns` | Documented arguments/returns mismatch signature; sync # Arguments bullets and # Returns with the fn signature. |
 | `doc_blank_hits` | Doc comments without a preceding blank line; separate `///` blocks with an empty line. |
 | `dot_ok_hits` | Dot-ok error swallows; propagate errors with context instead. |
 | `duplicate_stems` | Duplicate module stems across `src/`, `tests/`, `benches/`; keep every file name unique codebase-wide. |

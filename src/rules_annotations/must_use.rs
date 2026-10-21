@@ -18,8 +18,10 @@
 use crate::{
     lexer::word::has_word,
     rules_annotations::{
-        code_of, is_pub_sig, is_pub_trait_fn, item_args::body_forwards_item, joined_signature,
-        return_tail, sig_returns_unit,
+        code_of, is_pub_sig, is_pub_trait_fn,
+        item_args::body_forwards_item,
+        joined_signature,
+        signature::{params_of, return_tail, sig_returns_unit, split_params},
     },
     scan::{SourceFile, collect_line_hits},
 };
@@ -27,60 +29,6 @@ use crate::{
 /// True if stripped `code` holds a `must_use` attribute.
 fn has_must_use(code: &str) -> bool {
     code.contains("#[") && has_word(code, "must_use")
-}
-
-/// True if `c` opens a bracket level.
-const fn is_bracket_opener(c: char) -> bool {
-    matches!(c, '(' | '[' | '{' | '<')
-}
-
-/// True if `c` closes a bracket level.
-const fn is_bracket_closer(c: char) -> bool {
-    matches!(c, ')' | ']' | '}' | '>')
-}
-
-/// Parameter list of `sig` between the first `(` and its match, if any.
-fn params_of(sig: &str) -> Option<String> {
-    let open = sig.find('(')?;
-    let mut depth: i32 = 0;
-    for (k, c) in sig.get(open..)?.char_indices() {
-        if is_bracket_opener(c) {
-            depth = depth.saturating_add(1);
-            continue;
-        }
-        if is_bracket_closer(c) {
-            depth = depth.saturating_sub(1);
-        }
-        if depth <= 0 {
-            return sig
-                .get(open.saturating_add(1)..open.saturating_add(k))
-                .map(str::to_owned);
-        }
-    }
-    None
-}
-
-/// Split `params` on top-level commas.
-fn split_params(params: &str) -> Vec<&str> {
-    let mut out = Vec::new();
-    let mut depth: i32 = 0;
-    let mut start = 0;
-    for (k, c) in params.char_indices() {
-        if is_bracket_opener(c) {
-            depth = depth.saturating_add(1);
-            continue;
-        }
-        if is_bracket_closer(c) {
-            depth = depth.saturating_sub(1);
-            continue;
-        }
-        if c == ',' && depth <= 0 {
-            out.push(params.get(start..k).unwrap_or(""));
-            start = k.saturating_add(1);
-        }
-    }
-    out.push(params.get(start..).unwrap_or(""));
-    out
 }
 
 /// True if `piece` is a bare wildcard parameter, which clippy ignores.

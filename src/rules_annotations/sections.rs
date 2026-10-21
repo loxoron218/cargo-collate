@@ -17,7 +17,7 @@ use crate::{
             attachment::{is_test_attr, scan_above},
             is_test_file,
         },
-        return_tail,
+        signature::return_tail,
     },
     rules_harness::{
         range::{code_of, in_ranges, stray_gap, test_ranges},
